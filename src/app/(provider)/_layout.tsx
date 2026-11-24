@@ -1,0 +1,30 @@
+import { Redirect, Tabs } from 'expo-router';
+import { Spinner } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { colors } from '@/lib/theme';
+
+export default function ProviderLayout() {
+  const { session, profile, loading } = useAuth();
+  if (loading || (session && !profile)) return <Spinner />;
+  if (!session) return <Redirect href="/login" />;
+  if (profile?.role !== 'provider') return <Redirect href="/(customer)" />;
+  return (
+    <Tabs
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.dark },
+        headerTintColor: '#fff',
+        tabBarActiveTintColor: colors.primary,
+        tabBarLabelStyle: { fontSize: 14, fontWeight: '700' },
+        tabBarIconStyle: { display: 'none' },
+        tabBarStyle: { height: 56 },
+      }}
+    >
+      <Tabs.Screen name="index" options={{ title: 'Heute', tabBarLabel: 'Heute' }} />
+      <Tabs.Screen name="week" options={{ title: 'Wochenplan', tabBarLabel: 'Woche' }} />
+      <Tabs.Screen name="manage" options={{ title: 'Verwaltung', tabBarLabel: 'Verwaltung' }} />
+      <Tabs.Screen name="more" options={{ title: 'Mehr', tabBarLabel: 'Mehr' }} />
+      <Tabs.Screen name="trip" options={{ href: null, title: 'Fahrt' }} />
+      <Tabs.Screen name="dog" options={{ href: null, title: 'Hund' }} />
+    </Tabs>
+  );
+}

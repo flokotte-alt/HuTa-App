@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Huta",
+    "slug": "huta",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "huta",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "de.dogworker.huta",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "de.dogworker.huta",
+      "adaptiveIcon": {
+        "backgroundColor": "#2c2c2c",
+        "foregroundImage": "./assets/adaptive-icon.png"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#2c2c2c",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Huta nutzt deinen Standort, solange eine Fahrt läuft, damit Kunden die Ankunftszeit sehen.",
+          "locationAlwaysAndWhenInUsePermission": "Huta nutzt deinen Standort während einer Fahrt, auch wenn die App im Hintergrund läuft.",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      "expo-notifications",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
