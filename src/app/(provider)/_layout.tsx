@@ -7,7 +7,7 @@ export default function ProviderLayout() {
   const { session, profile, loading } = useAuth();
   if (loading || (session && !profile)) return <Spinner />;
   if (!session) return <Redirect href="/login" />;
-  if (profile?.role !== 'provider') return <Redirect href="/(customer)" />;
+  if (profile?.role !== 'provider') return <Redirect href="/(customer)/home" />;
   return (
     <Tabs
       screenOptions={{
@@ -19,12 +19,10 @@ export default function ProviderLayout() {
         tabBarStyle: { height: 56 },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Heute', tabBarLabel: 'Heute' }} />
+      <Tabs.Screen name="today" options={{ title: 'Heute', tabBarLabel: 'Heute' }} />
       <Tabs.Screen name="week" options={{ title: 'Wochenplan', tabBarLabel: 'Woche' }} />
       <Tabs.Screen name="manage" options={{ title: 'Verwaltung', tabBarLabel: 'Verwaltung' }} />
       <Tabs.Screen name="more" options={{ title: 'Mehr', tabBarLabel: 'Mehr' }} />
-      <Tabs.Screen name="trip" options={{ href: null, title: 'Fahrt' }} />
-      <Tabs.Screen name="dog" options={{ href: null, title: 'Hund' }} />
     </Tabs>
   );
 }

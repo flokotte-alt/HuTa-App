@@ -85,9 +85,9 @@ export default function Manage() {
                 {c.dogs
                   .filter((d) => d.active)
                   .map((d) => (
-                    <Chip key={d.id} title={d.name} onPress={() => router.push(`/(provider)/dog?id=${d.id}`)} />
+                    <Chip key={d.id} title={d.name} onPress={() => router.push(`/dog?id=${d.id}`)} />
                   ))}
-                <Chip title="+ Hund" onPress={() => router.push(`/(provider)/dog?customer=${c.id}`)} />
+                <Chip title="+ Hund" onPress={() => router.push(`/dog?customer=${c.id}`)} />
               </Row>
               <Btn
                 kind="ghost"

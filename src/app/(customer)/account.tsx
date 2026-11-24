@@ -72,7 +72,7 @@ export default function Account() {
         </Card>
       )}
       {dogs.map((id) => {
-        const rs = rules.filter((r) => r.dog_id === id);
+        const rs = rules.filter((r) => r.dog_id === id).sort((a, b) => (b.period ?? '').localeCompare(a.period ?? ''));
         const first = rs[0];
         return (
           <Card key={id}>

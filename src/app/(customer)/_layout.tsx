@@ -7,7 +7,7 @@ export default function CustomerLayout() {
   const { session, profile, loading } = useAuth();
   if (loading || (session && !profile)) return <Spinner />;
   if (!session) return <Redirect href="/login" />;
-  if (profile?.role === 'provider') return <Redirect href="/(provider)" />;
+  if (profile?.role === 'provider') return <Redirect href="/(provider)/today" />;
   return (
     <Tabs
       screenOptions={{
@@ -19,7 +19,7 @@ export default function CustomerLayout() {
         tabBarStyle: { height: 56 },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Start', tabBarLabel: 'Start' }} />
+      <Tabs.Screen name="home" options={{ title: 'Start', tabBarLabel: 'Start' }} />
       <Tabs.Screen name="account" options={{ title: 'Mein Hund', tabBarLabel: 'Mein Hund' }} />
     </Tabs>
   );

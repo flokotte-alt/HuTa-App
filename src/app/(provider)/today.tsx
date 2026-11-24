@@ -70,12 +70,12 @@ export default function Today() {
       <H2>Morgens einsammeln</H2>
       <Card>
         {list(morning)}
-        <Btn title={label('morning')} onPress={() => router.push('/(provider)/trip?direction=morning')} />
+        <Btn title={label('morning')} onPress={() => router.push('/trip?direction=morning')} />
       </Card>
       <H2>Nachmittags zurückbringen</H2>
       <Card>
         {list(afternoon)}
-        <Btn title={label('afternoon')} onPress={() => router.push('/(provider)/trip?direction=afternoon')} />
+        <Btn title={label('afternoon')} onPress={() => router.push('/trip?direction=afternoon')} />
       </Card>
       {others.length > 0 && (
         <>
