@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Linking, View } from 'react-native';
+import { confirmDialog, notify } from '@/lib/dialog';
+import { AppState, Linking, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Btn, Card, H2, Row, Screen, T } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
@@ -57,17 +58,24 @@ export default function CustomerHome() {
   );
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 20000);
-    return () => clearInterval(t);
-  }, []);
+    const sub = AppState.addEventListener('change', (st) => {
+      if (st === 'active') load();
+    });
+    return () => {
+      clearInterval(t);
+      sub.remove();
+    };
+  }, [load]);
 
   async function run(label: string, fn: () => PromiseLike<{ error: { message: string } | null }>) {
     const { error } = await fn();
-    if (error) Alert.alert(label, error.message);
+    if (error) notify(label, error.message);
     load();
   }
 
   const mine = new Set(myDogs.map((d) => d.name));
-  const days = Array.from(new Set(week.map((w) => w.day))).sort();
+  const todayIso = iso(new Date());
+  const days = Array.from(new Set(week.map((w) => w.day))).filter((d) => d >= todayIso).sort();
   const weekBlock = (
     <>
       <H2>Wochenliste</H2>
@@ -161,10 +169,9 @@ export default function CustomerHome() {
                   kind="danger"
                   title="Hund ist krank, bitte nicht abholen"
                   onPress={() =>
-                    Alert.alert(`${t.dog_name} krank melden?`, 'Der Hund wird für heute abgemeldet.', [
-                      { text: 'Abbrechen', style: 'cancel' },
-                      { text: 'Krank melden', style: 'destructive', onPress: () => run('Krankmeldung', () => supabase.rpc('customer_sick', { p_dog: t.dog_id })) },
-                    ])
+                    confirmDialog(`${t.dog_name} krank melden?`, 'Der Hund wird für heute abgemeldet.', 'Krank melden', () =>
+                      run('Krankmeldung', () => supabase.rpc('customer_sick', { p_dog: t.dog_id })),
+                    true)
                   }
                 />
               </View>

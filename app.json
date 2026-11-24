@@ -44,7 +44,8 @@
           "locationWhenInUsePermission": "Huta nutzt deinen Standort, solange eine Fahrt läuft, damit Kunden die Ankunftszeit sehen.",
           "locationAlwaysAndWhenInUsePermission": "Huta nutzt deinen Standort während einer Fahrt, auch wenn die App im Hintergrund läuft.",
           "isAndroidBackgroundLocationEnabled": false,
-          "isAndroidForegroundServiceEnabled": true
+          "isAndroidForegroundServiceEnabled": true,
+          "isIosBackgroundLocationEnabled": true
         }
       ],
       "expo-notifications",

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
+import { notify } from '@/lib/dialog';
 import { useFocusEffect } from 'expo-router';
 import { Btn, Card, Chip, Field, H2, Row, Screen, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
@@ -42,21 +42,21 @@ export default function More() {
 
   async function setDriver(day: string, driverId: string) {
     const { error } = await supabase.from('duty').upsert({ day, driver_id: driverId });
-    if (error) Alert.alert('Fehler', error.message);
+    if (error) notify('Fehler', error.message);
     load();
   }
 
   async function savePhone() {
     await supabase.from('profiles').update({ phone: phone.trim() || null }).eq('id', profile!.id);
     await refresh();
-    Alert.alert('Gespeichert');
+    notify('Gespeichert');
   }
 
   async function addClosure() {
     const ok = /^\d{4}-\d{2}-\d{2}$/;
-    if (!ok.test(cl.from) || !ok.test(cl.to)) return Alert.alert('Datum prüfen', 'Bitte als JJJJ-MM-TT eingeben.');
+    if (!ok.test(cl.from) || !ok.test(cl.to)) return notify('Datum prüfen', 'Bitte als JJJJ-MM-TT eingeben.');
     const { error } = await supabase.from('closures').insert({ date_from: cl.from, date_to: cl.to, note: cl.note || null });
-    if (error) return Alert.alert('Fehler', error.message);
+    if (error) return notify('Fehler', error.message);
     setCl({ from: '', to: '', note: '' });
     load();
   }
@@ -121,7 +121,7 @@ export default function More() {
           title="Speichern"
           onPress={async () => {
             await supabase.from('app_settings').upsert({ key: 'apartment_extra_minutes', value: String(Number(extra) || 5) });
-            Alert.alert('Gespeichert');
+            notify('Gespeichert');
           }}
         />
       </Card>

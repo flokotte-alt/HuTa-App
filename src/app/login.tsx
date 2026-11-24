@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Image, View } from 'react-native';
+import { notify } from '@/lib/dialog';
+import { Image, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Btn, Field, H1, Screen, T } from '@/components/ui';
@@ -26,17 +27,17 @@ export default function Login() {
         const { data, error } = await supabase.auth.signUp({ email: mail, password, options: { data: { name } } });
         if (error) throw error;
         if (!data.session) {
-          Alert.alert('Fast geschafft', 'Bitte bestätige deine E-Mail-Adresse über den Link in der Nachricht, die wir dir geschickt haben.');
+          notify('Fast geschafft', 'Bitte bestätige deine E-Mail-Adresse über den Link in der Nachricht, die wir dir geschickt haben.');
           setMode('login');
         } else router.replace('/');
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(mail);
         if (error) throw error;
-        Alert.alert('Gesendet', 'Du bekommst eine E-Mail zum Zurücksetzen des Passworts.');
+        notify('Gesendet', 'Du bekommst eine E-Mail zum Zurücksetzen des Passworts.');
         setMode('login');
       }
     } catch (e) {
-      Alert.alert('Das hat nicht geklappt', e instanceof Error ? e.message : 'Unbekannter Fehler');
+      notify('Das hat nicht geklappt', e instanceof Error ? e.message : 'Unbekannter Fehler');
     } finally {
       setBusy(false);
     }

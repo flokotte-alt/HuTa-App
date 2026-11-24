@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { confirmDialog, notify } from '@/lib/dialog';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Btn, Card, Field, H2, Row, Screen, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -23,6 +23,7 @@ const WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
 export default function Account() {
   const { profile, signOut } = useAuth();
+  const router = useRouter();
   const [rules, setRules] = useState<RuleRow[]>([]);
   const [vacs, setVacs] = useState<Vac[]>([]);
   const [closures, setClosures] = useState<Closure[]>([]);
@@ -51,10 +52,10 @@ export default function Account() {
 
   async function addVacation() {
     const ok = /^\d{4}-\d{2}-\d{2}$/;
-    if (!customerId) return Alert.alert('Kein Kunde verknüpft', 'Dein Konto ist noch keinem Hund zugeordnet.');
-    if (!ok.test(from) || !ok.test(to)) return Alert.alert('Datum prüfen', 'Bitte als JJJJ-MM-TT eingeben, zum Beispiel 2026-12-28.');
+    if (!customerId) return notify('Kein Kunde verknüpft', 'Dein Konto ist noch keinem Hund zugeordnet.');
+    if (!ok.test(from) || !ok.test(to)) return notify('Datum prüfen', 'Bitte als JJJJ-MM-TT eingeben, zum Beispiel 2026-12-28.');
     const { error } = await supabase.from('vacations').insert({ customer_id: customerId, date_from: from, date_to: to });
-    if (error) return Alert.alert('Fehler', error.message);
+    if (error) return notify('Fehler', error.message);
     setFrom('');
     setTo('');
     load();
@@ -125,7 +126,20 @@ export default function Account() {
         </T>
       </Card>
 
+      <Btn kind="ghost" title="Datenschutzerklärung" onPress={() => router.push('/privacy')} />
       <Btn kind="ghost" title="Abmelden" onPress={signOut} />
+      <Btn
+        kind="danger"
+        title="Konto und Daten löschen"
+        onPress={() =>
+          confirmDialog('Konto wirklich löschen?', 'Dein Konto, dein Hund, dein Wochenplan und dein Urlaub werden endgültig gelöscht.', 'Endgültig löschen', async () => {
+            const { error } = await supabase.rpc('delete_my_account');
+            if (error) return notify('Fehler', error.message);
+            await signOut();
+            router.replace('/login');
+          }, true)
+        }
+      />
     </Screen>
   );
 }

@@ -1,10 +1,15 @@
+import { useEffect } from 'react';
 import { Redirect, Tabs } from 'expo-router';
+import { registerPush } from '@/lib/push';
 import { Spinner } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { colors } from '@/lib/theme';
 
 export default function ProviderLayout() {
   const { session, profile, loading } = useAuth();
+  useEffect(() => {
+    if (profile?.role === 'provider') registerPush(true);
+  }, [profile?.role]);
   if (loading || (session && !profile)) return <Spinner />;
   if (!session) return <Redirect href="/login" />;
   if (profile?.role !== 'provider') return <Redirect href="/(customer)/home" />;

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
+import { confirmDialog, notify } from '@/lib/dialog';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Btn, Card, Chip, Field, H2, Row, Screen, T } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
@@ -35,7 +35,7 @@ export default function Manage() {
     const { error } = await supabase
       .from('customers')
       .insert({ name: nc.name.trim(), email: nc.email.trim().toLowerCase(), phone: nc.phone.trim() || null });
-    if (error) return Alert.alert('Fehler', error.message);
+    if (error) return notify('Fehler', error.message);
     setNc({ name: '', email: '', phone: '' });
     load();
   }
@@ -45,10 +45,10 @@ export default function Manage() {
       const u = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&q=${encodeURIComponent(ns.address)}`;
       const r = await fetch(u, { headers: { 'User-Agent': 'huta-app/0.1' } });
       const j = (await r.json()) as { lat: string; lon: string }[];
-      if (!j.length) return Alert.alert('Nicht gefunden', 'Bitte Adresse genauer eingeben oder Koordinaten von Hand eintragen.');
+      if (!j.length) return notify('Nicht gefunden', 'Bitte Adresse genauer eingeben oder Koordinaten von Hand eintragen.');
       setNs({ ...ns, lat: j[0].lat, lng: j[0].lon });
     } catch {
-      Alert.alert('Kein Netz', 'Die Suche hat nicht geklappt.');
+      notify('Kein Netz', 'Die Suche hat nicht geklappt.');
     }
   }
 
@@ -59,7 +59,7 @@ export default function Manage() {
       lat: Number(ns.lat.replace(',', '.')),
       lng: Number(ns.lng.replace(',', '.')),
     });
-    if (error) return Alert.alert('Fehler', error.message);
+    if (error) return notify('Fehler', error.message);
     setNs({ label: '', address: '', lat: '', lng: '' });
     load();
   }
@@ -89,21 +89,15 @@ export default function Manage() {
                   ))}
                 <Chip title="+ Hund" onPress={() => router.push(`/dog?customer=${c.id}`)} />
               </Row>
+              <Btn kind="ghost" title="Kunde bearbeiten" onPress={() => router.push(`/customer?id=${c.id}`)} />
               <Btn
                 kind="ghost"
                 title="Kunde löschen"
                 onPress={() =>
-                  Alert.alert(`${c.name} löschen?`, 'Alle Hunde und Wochenpläne dieses Kunden werden ebenfalls gelöscht.', [
-                    { text: 'Abbrechen', style: 'cancel' },
-                    {
-                      text: 'Löschen',
-                      style: 'destructive',
-                      onPress: async () => {
-                        await supabase.from('customers').delete().eq('id', c.id);
-                        load();
-                      },
-                    },
-                  ])
+                  confirmDialog(`${c.name} löschen?`, 'Alle Hunde und Wochenpläne dieses Kunden werden ebenfalls gelöscht.', 'Löschen', async () => {
+                    await supabase.from('customers').delete().eq('id', c.id);
+                    load();
+                  }, true)
                 }
               />
             </Card>

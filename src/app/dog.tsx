@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import { notify } from '@/lib/dialog';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Btn, Card, Chip, Field, H2, Row, Screen, T } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
@@ -62,13 +62,13 @@ export default function DogForm() {
       const { error } = await supabase.from('dogs').update(payload).eq('id', id);
       if (error) {
         setBusy(false);
-        return Alert.alert('Fehler', error.message);
+        return notify('Fehler', error.message);
       }
     } else {
       const { data, error } = await supabase.from('dogs').insert(payload).select('id').single();
       if (error || !data) {
         setBusy(false);
-        return Alert.alert('Fehler', error?.message ?? 'Unbekannt');
+        return notify('Fehler', error?.message ?? 'Unbekannt');
       }
       dogId = data.id;
     }
@@ -78,7 +78,7 @@ export default function DogForm() {
     ];
     const { error } = await supabase.from('dog_rules').upsert(rules, { onConflict: 'dog_id,period' });
     setBusy(false);
-    if (error) return Alert.alert('Fehler', error.message);
+    if (error) return notify('Fehler', error.message);
     router.back();
   }
 

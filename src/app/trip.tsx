@@ -1,28 +1,28 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Linking, Platform, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Linking, Platform, View } from 'react-native';
 import * as Location from 'expo-location';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Btn, Card, Chip, H2, Row, Screen, Spinner, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
+import { confirmDialog, notify } from '@/lib/dialog';
 import { supabase } from '@/lib/supabase';
-import { colors, HANDOVER_LABEL } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 import { dayLabel, iso, timeLabel } from '@/lib/dates';
 import { computeEtas, orderStops, type Pt } from '@/lib/trip';
+import { arriveCurrentStop, currentOrigin, recomputeEtas } from '@/lib/tripOps';
+import { startTracking, stopTracking } from '@/lib/tracking';
 
 type Direction = 'morning' | 'afternoon';
 type Cand = { dog_id: string; dog_name: string; station_id: string | null; station_label: string | null; lat: number | null; lng: number | null; handover: string };
-
 type PlanStop = Pt & { station_id: string; label: string; dogs: { dog_id: string; name: string; handover: 'station' | 'apartment' }[]; extra: number };
-
 type RunDog = { id: string; dog_id: string; handover: string; thumb_at: string | null; apartment_requested_at: string | null; sick: boolean; dogs: { name: string } | null };
 type RunStop = { id: string; position: number; eta: string; arrived_at: string | null; extra_minutes: number; stations: { label: string; lat: number; lng: number } | null; trip_dogs: RunDog[] };
 type Trip = { id: string; state: string; start_label: string | null; start_lat: number | null; start_lng: number | null };
+type Start = Pt & { label: string };
 
-const HUTA: Pt & { label: string } = { label: 'Huta (Halsbrücke)', lat: 50.9785012, lng: 13.4082957 };
-const STARTS: (Pt & { label: string })[] = [
-  { label: 'Tolkewitzer Straße 70', lat: 51.0349783, lng: 13.8227082 },
-  HUTA,
-];
+const HUTA: Start = { label: 'Huta (Halsbrücke)', lat: 50.9785012, lng: 13.4082957 };
+const STARTS: Start[] = [{ label: 'Tolkewitzer Straße 70', lat: 51.0349783, lng: 13.8227082 }, HUTA];
+const DWELL_MIN = 2;
 
 export default function TripScreen() {
   const { direction: dirParam } = useLocalSearchParams<{ direction?: string }>();
@@ -35,12 +35,14 @@ export default function TripScreen() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [stops, setStops] = useState<RunStop[]>([]);
   const [selfDogs, setSelfDogs] = useState<string[]>([]);
-  const [start, setStart] = useState<(Pt & { label: string }) | null>(null);
-  const [plan, setPlan] = useState<PlanStop[]>([]);
+  const [start, setStart] = useState<Start | null>(null);
+  const [candidates, setCandidates] = useState<PlanStop[]>([]);
+  const [planList, setPlanList] = useState<PlanStop[]>([]);
+  const [etaList, setEtaList] = useState<Date[]>([]);
+  const [source, setSource] = useState<'google' | 'estimate'>('estimate');
   const [extraMin, setExtraMin] = useState(5);
   const [busy, setBusy] = useState(false);
-  const watcher = useRef<Location.LocationSubscription | null>(null);
-  const lastSent = useRef(0);
+  const [info, setInfo] = useState('');
 
   const loadRun = useCallback(async () => {
     const { data: t } = await supabase.from('trips').select('*').eq('day', today).eq('direction', direction).maybeSingle();
@@ -74,7 +76,7 @@ export default function TripScreen() {
       if (h === 'apartment') st.extra = em;
       by.set(r.station_id, st);
     }
-    setPlan([...by.values()]);
+    setCandidates([...by.values()]);
   }, [today, direction]);
 
   useFocusEffect(
@@ -86,52 +88,75 @@ export default function TripScreen() {
     }, [loadRun, loadPlan]),
   );
 
-  // Live-Standort nur waehrend die Fahrt laeuft
+  // Standort teilen, solange die Fahrt laeuft (auch im Hintergrund)
   useEffect(() => {
-    if (trip?.state !== 'running') return;
-    let cancelled = false;
-    (async () => {
-      const perm = await Location.requestForegroundPermissionsAsync();
-      if (perm.status !== 'granted' || cancelled) return;
-      watcher.current = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.Balanced, timeInterval: 15000, distanceInterval: 30 },
-        (pos) => {
-          if (Date.now() - lastSent.current < 10000) return;
-          lastSent.current = Date.now();
-          supabase.from('trip_location').upsert({ trip_id: trip.id, lat: pos.coords.latitude, lng: pos.coords.longitude, updated_at: new Date().toISOString() });
-        },
-      );
-    })();
-    return () => {
-      cancelled = true;
-      watcher.current?.remove();
-      watcher.current = null;
-    };
+    if (trip?.state === 'running') {
+      startTracking(trip.id).then((r) => {
+        if (r === 'denied') setInfo('Standort ist nicht erlaubt. Die Kunden sehen dann nur die geschätzten Zeiten.');
+      });
+    } else if (trip?.state === 'done') {
+      stopTracking();
+    }
   }, [trip?.id, trip?.state]);
+
+  // Reihenfolge und Zeiten berechnen: mit Verkehrsdaten (Google), sonst Naeherung
+  const recalc = useCallback(
+    async (list: PlanStop[], from: Start, optimize: boolean) => {
+      if (list.length === 0) {
+        setPlanList([]);
+        setEtaList([]);
+        return;
+      }
+      const end = direction === 'morning' ? HUTA : from;
+      try {
+        const { data, error } = await supabase.functions.invoke('plan-route', {
+          body: { start: { lat: from.lat, lng: from.lng }, end: { lat: end.lat, lng: end.lng }, stops: list.map((s) => ({ lat: s.lat, lng: s.lng })), optimize },
+        });
+        if (!error && data?.available) {
+          const ordered: PlanStop[] = (data.order as number[]).map((i) => list[i]);
+          const legs = data.legSeconds as number[];
+          let t = Date.now();
+          const etas = ordered.map((s, i) => {
+            t += (legs[i] ?? 0) * 1000;
+            const eta = new Date(t);
+            t += (DWELL_MIN + s.extra) * 60000;
+            return eta;
+          });
+          setPlanList(ordered);
+          setEtaList(etas);
+          setSource('google');
+          return;
+        }
+      } catch {
+        /* Rueckfall unten */
+      }
+      const ordered = optimize ? orderStops(from, list) : list;
+      setPlanList(ordered);
+      setEtaList(computeEtas(from, ordered, new Date()));
+      setSource('estimate');
+    },
+    [direction],
+  );
+
+  async function chooseStart(s: Start) {
+    setStart(s);
+    await recalc(candidates, s, true);
+  }
 
   async function pickCurrentLocation() {
     const perm = await Location.requestForegroundPermissionsAsync();
-    if (perm.status !== 'granted') return Alert.alert('Standort aus', 'Bitte Standort erlauben oder einen festen Startpunkt wählen.');
+    if (perm.status !== 'granted') return notify('Standort aus', 'Bitte Standort erlauben oder einen festen Startpunkt wählen.');
     const p = await Location.getCurrentPositionAsync({});
-    setStart({ label: 'Aktueller Standort', lat: p.coords.latitude, lng: p.coords.longitude });
+    await chooseStart({ label: 'Aktueller Standort', lat: p.coords.latitude, lng: p.coords.longitude });
   }
 
-  const ordered = start ? orderStops(start, plan) : plan;
-  const etas = start ? computeEtas(start, ordered, new Date()) : [];
-
-  function move(i: number, dir: -1 | 1) {
-    const list = [...ordered];
+  async function move(i: number, dir: -1 | 1) {
     const j = i + dir;
-    if (j < 0 || j >= list.length) return;
+    if (!start || j < 0 || j >= planList.length) return;
+    const list = [...planList];
     [list[i], list[j]] = [list[j], list[i]];
-    setPlan(list);
-    // Reihenfolge fixieren: Start-Sortierung nicht mehr automatisch anwenden
-    setStart((s) => (s ? { ...s } : s));
-    manual.current = true;
+    await recalc(list, start, false);
   }
-  const manual = useRef(false);
-  const shown = manual.current ? plan : ordered;
-  const shownEtas = start ? computeEtas(start, shown, new Date()) : [];
 
   async function startTrip() {
     if (!start || !session) return;
@@ -144,60 +169,54 @@ export default function TripScreen() {
         .select('*')
         .single();
       if (error || !t) throw error ?? new Error('Fahrt konnte nicht angelegt werden');
-      for (let i = 0; i < shown.length; i++) {
-        const s = shown[i];
+      for (let i = 0; i < planList.length; i++) {
+        const s = planList[i];
         const { data: row, error: e2 } = await supabase
           .from('trip_stops')
-          .insert({ trip_id: t.id, station_id: s.station_id, position: i, eta: shownEtas[i].toISOString(), extra_minutes: s.extra })
+          .insert({ trip_id: t.id, station_id: s.station_id, position: i, eta: etaList[i].toISOString(), extra_minutes: s.extra })
           .select('id')
           .single();
         if (e2 || !row) throw e2 ?? new Error('Station konnte nicht angelegt werden');
         const { error: e3 } = await supabase.from('trip_dogs').insert(s.dogs.map((d) => ({ stop_id: row.id, dog_id: d.dog_id, handover: d.handover })));
         if (e3) throw e3;
       }
-      manual.current = false;
+      await supabase.rpc('trip_started', { p_trip: t.id });
       await loadRun();
     } catch (e) {
-      Alert.alert('Start nicht möglich', e instanceof Error ? e.message : 'Unbekannter Fehler');
+      notify('Start nicht möglich', e instanceof Error ? e.message : 'Unbekannter Fehler');
     } finally {
       setBusy(false);
     }
   }
 
-  async function recompute(from: Pt, list: RunStop[], at: Date) {
-    const open = list.filter((s) => !s.arrived_at && s.stations);
-    const pts = open.map((s) => ({ lat: s.stations!.lat, lng: s.stations!.lng, extra: s.extra_minutes }));
-    const e = computeEtas(from, pts, at);
-    await Promise.all(open.map((s, i) => supabase.from('trip_stops').update({ eta: e[i].toISOString() }).eq('id', s.id)));
-  }
-
   async function nextStop() {
-    const cur = stops.find((s) => !s.arrived_at);
-    if (!cur || !cur.stations) return;
+    if (!trip) return;
     setBusy(true);
-    const now = new Date();
-    await supabase.from('trip_stops').update({ arrived_at: now.toISOString() }).eq('id', cur.id);
-    const rest = stops.map((s) => (s.id === cur.id ? { ...s, arrived_at: now.toISOString() } : s));
-    await recompute(cur.stations, rest, new Date(now.getTime() + (2 + cur.extra_minutes) * 60000));
+    await arriveCurrentStop(trip.id);
     setBusy(false);
     loadRun();
   }
 
   async function adoptApartment(stop: RunStop, dog: RunDog) {
+    if (!trip) return;
     await supabase.from('trip_dogs').update({ handover: 'apartment' }).eq('id', dog.id);
-    const extra = stop.extra_minutes || extraMin;
-    await supabase.from('trip_stops').update({ extra_minutes: extra }).eq('id', stop.id);
-    const updated = stops.map((s) => (s.id === stop.id ? { ...s, extra_minutes: extra } : s));
-    const done = [...updated].filter((s) => s.arrived_at && s.stations).pop();
-    const from = done?.stations ?? (trip?.start_lat != null ? { lat: trip.start_lat, lng: trip.start_lng! } : null);
-    if (from) await recompute(from, updated, new Date());
+    await supabase.from('trip_stops').update({ extra_minutes: stop.extra_minutes || extraMin }).eq('id', stop.id);
+    const from = await currentOrigin(trip.id);
+    if (from) await recomputeEtas(trip.id, from, new Date());
     loadRun();
+  }
+
+  async function remind() {
+    if (!trip) return;
+    const { data, error } = await supabase.rpc('remind_laggards', { p_trip: trip.id });
+    setInfo(error ? error.message : `Erinnerung an ${data ?? 0} Kunden gesendet.`);
   }
 
   async function endTrip() {
     if (!trip) return;
     await supabase.from('trips').update({ state: 'done', ended_at: new Date().toISOString() }).eq('id', trip.id);
     await supabase.from('trip_location').delete().eq('trip_id', trip.id);
+    await stopTracking();
     loadRun();
   }
 
@@ -216,10 +235,12 @@ export default function TripScreen() {
     const finished = trip.state === 'done' || !current;
     const hints = stops.flatMap((s) => s.trip_dogs.filter((d) => d.apartment_requested_at && d.handover !== 'apartment' && !s.arrived_at).map((d) => ({ s, d })));
     const sick = stops.flatMap((s) => s.trip_dogs.filter((d) => d.sick).map((d) => d.dogs?.name));
+    const missing = stops.flatMap((s) => (s.arrived_at ? [] : s.trip_dogs.filter((d) => !d.thumb_at && !d.sick)));
     return (
       <Screen>
         <H2>{title}</H2>
         {trip.state === 'done' && <T bold>Fahrt beendet.</T>}
+        {info !== '' && <T small muted>{info}</T>}
         {hints.map(({ s, d }) => (
           <Card key={d.id} style={{ borderColor: colors.primary, borderWidth: 2 }}>
             <T bold>
@@ -248,7 +269,14 @@ export default function TripScreen() {
             ))}
             {current.stations && <Btn kind="dark" title="Navigation starten" onPress={() => openMaps(current.stations!)} />}
             <Btn title="Nächster Stopp (Hunde sind da)" onPress={nextStop} busy={busy} />
+            <T small muted>
+              Der Stopp wird auch automatisch erkannt, wenn du kurz an der Station hältst.
+            </T>
           </Card>
+        )}
+
+        {trip.state === 'running' && missing.length > 0 && (
+          <Btn kind="ghost" title={`Nachzügler erinnern (${missing.length})`} onPress={remind} />
         )}
 
         <H2>Alle Stopps</H2>
@@ -267,11 +295,13 @@ export default function TripScreen() {
             </T>
           </Card>
         ))}
-        {trip.state === 'running' && <Btn kind="danger" title="Fahrt beenden (Notfall oder fertig)" onPress={() =>
-          Alert.alert('Fahrt beenden?', 'Der Countdown bei den Kunden verschwindet.', [
-            { text: 'Abbrechen', style: 'cancel' },
-            { text: 'Beenden', style: 'destructive', onPress: endTrip },
-          ])} />}
+        {trip.state === 'running' && (
+          <Btn
+            kind="danger"
+            title="Fahrt beenden (Notfall oder fertig)"
+            onPress={() => confirmDialog('Fahrt beenden?', 'Der Countdown bei den Kunden verschwindet.', 'Beenden', endTrip, true)}
+          />
+        )}
         {trip.state === 'done' && <Btn kind="ghost" title="Zurück" onPress={() => router.back()} />}
       </Screen>
     );
@@ -284,37 +314,48 @@ export default function TripScreen() {
       <T bold>Startpunkt</T>
       <Row wrap>
         {STARTS.map((s) => (
-          <Chip key={s.label} title={s.label} active={start?.label === s.label} onPress={() => { manual.current = false; setStart(s); }} />
+          <Chip key={s.label} title={s.label} active={start?.label === s.label} onPress={() => chooseStart(s)} />
         ))}
-        <Chip title="Aktueller Standort" active={start?.label === 'Aktueller Standort'} onPress={() => { manual.current = false; pickCurrentLocation(); }} />
+        <Chip title="Aktueller Standort" active={start?.label === 'Aktueller Standort'} onPress={pickCurrentLocation} />
       </Row>
-      <T small muted>
-        Die Reihenfolge ist ein Vorschlag nach Entfernung, ohne Verkehrsdaten. Du kannst sie mit den Pfeilen ändern.
-      </T>
+      {start && (
+        <T small muted>
+          {source === 'google'
+            ? 'Reihenfolge und Zeiten mit aktuellen Verkehrsdaten berechnet.'
+            : 'Reihenfolge nach Entfernung, Zeiten geschätzt (ohne Verkehrsdaten).'}{' '}
+          Mit den Pfeilen kannst du die Reihenfolge ändern.
+        </T>
+      )}
 
-      {shown.length === 0 && <T muted>Heute keine Hunde für die Route angemeldet.</T>}
-      {shown.map((s, i) => (
-        <Card key={s.station_id}>
-          <Row>
-            <View style={{ flex: 1 }}>
-              <T bold>
-                {i + 1}. {s.label}
-              </T>
-              <T small muted>
-                {s.dogs.map((d) => `${d.name}${d.handover === 'apartment' ? ' (Wohnung)' : ''}`).join(', ')}
-              </T>
-              {start && <T small muted>ca. {timeLabel(shownEtas[i].toISOString())} Uhr</T>}
-            </View>
-            <Chip title="▲" onPress={() => move(i, -1)} />
-            <Chip title="▼" onPress={() => move(i, 1)} />
-          </Row>
-        </Card>
-      ))}
+      {!start && <T muted>Bitte zuerst den Startpunkt wählen.</T>}
+      {start && planList.length === 0 && <T muted>Heute keine Hunde für die Route angemeldet.</T>}
+      {start &&
+        planList.map((s, i) => (
+          <Card key={s.station_id}>
+            <Row>
+              <View style={{ flex: 1 }}>
+                <T bold>
+                  {i + 1}. {s.label}
+                </T>
+                <T small muted>
+                  {s.dogs.map((d) => `${d.name}${d.handover === 'apartment' ? ' (Wohnung)' : ''}`).join(', ')}
+                </T>
+                {etaList[i] && (
+                  <T small muted>
+                    ca. {timeLabel(etaList[i].toISOString())} Uhr
+                  </T>
+                )}
+              </View>
+              <Chip title="▲" onPress={() => move(i, -1)} />
+              <Chip title="▼" onPress={() => move(i, 1)} />
+            </Row>
+          </Card>
+        ))}
       {selfDogs.length > 0 && <T small muted>Selbstbringer (nicht in der Route): {selfDogs.join(', ')}</T>}
       <T small muted>
-        {HANDOVER_LABEL.station}: Hunde warten an der Station.
+        Mit dem Start sehen die Kunden den Countdown und bekommen eine Nachricht.
       </T>
-      <Btn title="Fahrt starten" onPress={startTrip} busy={busy} disabled={!start || shown.length === 0} />
+      <Btn title="Fahrt starten" onPress={startTrip} busy={busy} disabled={!start || planList.length === 0} />
     </Screen>
   );
 }
