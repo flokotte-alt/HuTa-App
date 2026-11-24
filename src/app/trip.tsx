@@ -53,7 +53,15 @@ export default function TripScreen() {
         .select('id, position, eta, arrived_at, extra_minutes, stations(label, lat, lng), trip_dogs(id, dog_id, handover, thumb_at, apartment_requested_at, sick, dogs(name))')
         .eq('trip_id', t.id)
         .order('position');
-      setStops((s as unknown as RunStop[]) ?? []);
+      const list = (s as unknown as RunStop[]) ?? [];
+      setStops(list);
+      // Alles erledigt (oder nur noch Stationen ohne gesunden Hund): Fahrt automatisch beenden
+      if (t.state === 'running' && list.length > 0 && list.every((x) => x.arrived_at || !x.trip_dogs.some((d) => !d.sick))) {
+        await supabase.from('trips').update({ state: 'done', ended_at: new Date().toISOString() }).eq('id', t.id);
+        await supabase.from('trip_location').delete().eq('trip_id', t.id);
+        await stopTracking();
+        setTrip({ ...(t as Trip), state: 'done' });
+      }
     } else setStops([]);
     setLoading(false);
   }, [today, direction]);
@@ -231,7 +239,8 @@ export default function TripScreen() {
 
   // ---------- Laufende oder beendete Fahrt ----------
   if (trip && trip.state !== 'planned') {
-    const current = stops.find((s) => !s.arrived_at);
+    const active = (s: RunStop) => s.trip_dogs.some((d) => !d.sick);
+    const current = stops.find((s) => !s.arrived_at && active(s));
     const finished = trip.state === 'done' || !current;
     const hints = stops.flatMap((s) => s.trip_dogs.filter((d) => d.apartment_requested_at && d.handover !== 'apartment' && !s.arrived_at).map((d) => ({ s, d })));
     const sick = stops.flatMap((s) => s.trip_dogs.filter((d) => d.sick).map((d) => d.dogs?.name));
@@ -239,7 +248,7 @@ export default function TripScreen() {
     return (
       <Screen>
         <H2>{title}</H2>
-        {trip.state === 'done' && <T bold>Fahrt beendet.</T>}
+        {trip.state === 'done' && <T bold>Alle Stopps erledigt. Die Fahrt ist beendet.</T>}
         {info !== '' && <T small muted>{info}</T>}
         {hints.map(({ s, d }) => (
           <Card key={d.id} style={{ borderColor: colors.primary, borderWidth: 2 }}>
@@ -281,17 +290,17 @@ export default function TripScreen() {
 
         <H2>Alle Stopps</H2>
         {stops.map((s) => (
-          <Card key={s.id} style={{ opacity: s.arrived_at ? 0.5 : 1 }}>
+          <Card key={s.id} style={{ opacity: s.arrived_at || !active(s) ? 0.5 : 1 }}>
             <Row>
               <T bold>
                 {s.position + 1}. {s.stations?.label}
               </T>
               <T small muted>
-                {s.arrived_at ? `erledigt ${timeLabel(s.arrived_at)}` : `ca. ${timeLabel(s.eta)}`}
+                {s.arrived_at ? `erledigt ${timeLabel(s.arrived_at)}` : !active(s) ? 'entfällt (krank)' : `ca. ${timeLabel(s.eta)}`}
               </T>
             </Row>
             <T small muted>
-              {s.trip_dogs.map((d) => `${d.dogs?.name}${d.thumb_at ? ' ✓' : ''}`).join(', ')}
+              {s.trip_dogs.map((d) => `${d.dogs?.name}${d.sick ? ' (krank)' : ''}${d.thumb_at ? ' ✓' : ''}${d.handover === 'apartment' ? ' (Wohnung)' : ''}`).join(', ')}
             </T>
           </Card>
         ))}

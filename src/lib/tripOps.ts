@@ -7,14 +7,18 @@ type StopRow = {
   arrived_at: string | null;
   extra_minutes: number;
   stations: { lat: number; lng: number } | null;
+  trip_dogs: { sick: boolean }[];
 };
+
+// Eine Station zaehlt nur, solange mindestens ein Hund nicht krank gemeldet ist
+export const isActiveStop = (s: { trip_dogs: { sick: boolean }[] }) => s.trip_dogs.some((d) => !d.sick);
 
 const DWELL_MIN = 2;
 
 async function loadStops(tripId: string) {
   const { data } = await supabase
     .from('trip_stops')
-    .select('id, position, arrived_at, extra_minutes, stations(lat, lng)')
+    .select('id, position, arrived_at, extra_minutes, stations(lat, lng), trip_dogs(sick)')
     .eq('trip_id', tripId)
     .order('position');
   return ((data as unknown as StopRow[]) ?? []).filter((s) => s.stations);
@@ -23,7 +27,7 @@ async function loadStops(tripId: string) {
 // Neue Ankunftszeiten fuer alle offenen Stationen ab einem Ort und Zeitpunkt
 export async function recomputeEtas(tripId: string, from: Pt, at: Date) {
   const stops = await loadStops(tripId);
-  const open = stops.filter((s) => !s.arrived_at);
+  const open = stops.filter((s) => !s.arrived_at && isActiveStop(s));
   const etas = computeEtas(
     from,
     open.map((s) => ({ lat: s.stations!.lat, lng: s.stations!.lng, extra: s.extra_minutes })),
@@ -35,7 +39,7 @@ export async function recomputeEtas(tripId: string, from: Pt, at: Date) {
 // Aktuelle Station als erreicht markieren und den Rest neu rechnen
 export async function arriveCurrentStop(tripId: string): Promise<boolean> {
   const stops = await loadStops(tripId);
-  const cur = stops.find((s) => !s.arrived_at);
+  const cur = stops.find((s) => !s.arrived_at && isActiveStop(s));
   if (!cur) return false;
   const now = new Date();
   await supabase.from('trip_stops').update({ arrived_at: now.toISOString() }).eq('id', cur.id);

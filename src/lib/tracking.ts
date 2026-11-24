@@ -31,13 +31,12 @@ if (Platform.OS !== 'web') {
     // Ankunft: lange genug nahe an der naechsten Station
     const { data: stop } = await supabase
       .from('trip_stops')
-      .select('id, stations(lat, lng)')
+      .select('id, stations(lat, lng), trip_dogs(sick)')
       .eq('trip_id', tripId)
       .is('arrived_at', null)
-      .order('position')
-      .limit(1)
-      .maybeSingle();
-    const st = (stop as unknown as { id: string; stations: { lat: number; lng: number } | null } | null);
+      .order('position');
+    const open = (stop as unknown as { id: string; stations: { lat: number; lng: number } | null; trip_dogs: { sick: boolean }[] }[]) ?? [];
+    const st = open.find((s) => s.trip_dogs.some((d) => !d.sick)) ?? null;
     if (!st?.stations) return;
     const near = distKm({ lat: loc.coords.latitude, lng: loc.coords.longitude }, st.stations) <= ARRIVE_RADIUS_KM;
     if (!near) {

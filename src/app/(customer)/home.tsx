@@ -19,6 +19,7 @@ type TripRow = {
   apartment_allowed: boolean;
   apartment_open: boolean;
   apartment_requested: boolean;
+  handover: 'station' | 'apartment';
   sick: boolean;
   arrived: boolean;
   driver_name: string | null;
@@ -146,7 +147,8 @@ export default function CustomerHome() {
                     onPress={() => run('Daumen', () => supabase.rpc('customer_thumb', { p_trip_dog: t.trip_dog_id }))}
                   />
                 )}
-                {t.apartment_allowed && (
+                {t.handover === 'apartment' && <T small muted>Übergabe in der Wohnung.</T>}
+                {t.apartment_allowed && t.handover !== 'apartment' && (
                   <Btn
                     kind="dark"
                     title={
@@ -160,7 +162,7 @@ export default function CustomerHome() {
                     onPress={() => run('Wohnung', () => supabase.rpc('customer_apartment', { p_trip_dog: t.trip_dog_id }))}
                   />
                 )}
-                {t.apartment_allowed && !t.apartment_open && !t.apartment_requested && (
+                {t.apartment_allowed && t.handover !== 'apartment' && !t.apartment_open && !t.apartment_requested && (
                   <T small muted>
                     Bitte melde den Wunsch jetzt per WhatsApp.
                   </T>

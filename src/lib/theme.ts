@@ -17,7 +17,7 @@ export const colors = {
 
 export const STATUS_LABEL: Record<string, string> = {
   registered: 'angemeldet',
-  cancelled_billed: 'Absage (berechnet)',
+  cancelled_billed: 'Absage mit Berechnung',
   vacation: 'Urlaub',
   removed: 'gestrichen',
   sick: 'krank',
