@@ -1,6 +1,20 @@
 # Huta: Stand und Aufgaben
 
-Zuletzt aktualisiert: 25.11.2026 (nachmittags)
+Zuletzt aktualisiert: 25.11.2026 (Tagesende)
+
+## Beim nächsten Mal zuerst (Claude: Florian diese Liste direkt zeigen)
+
+Florian hat am 25.11. Schluss gemacht, bevor er A bis C erledigen konnte. Er möchte die Schritte beim nächsten Mal
+wieder genannt bekommen, auch am Mac. Befehle passend zum Rechner ausgeben.
+
+1. **A. Google-Schlüssel** (Pflicht für beide Builds): Google-Cloud-Projekt "Huta", vier APIs aktivieren, drei
+   Schlüssel anlegen, zwei bei Expo und einen bei Supabase hinterlegen.
+2. **B. Firebase** (vor dem Android-Build, sonst kein Push auf Android).
+3. Florian schreibt "A und B fertig". Claude prüft mit `env:list` und startet den Android-Build.
+4. **C. iPhone-Build** mit Florians Apple-Login, danach Upload zu TestFlight.
+5. Auf den Handys testen: Navi, Kundenkarte, "Standort immer", Push mit eigenem Ton, erstes Update ohne Build.
+
+Alle Klicks und Befehle: `EINRICHTUNG.md` (mit Abschnitt "Am Mac"). Sentry geht jederzeit.
 
 ## Kurzfassung
 

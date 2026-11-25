@@ -19,8 +19,11 @@ Huta ist komplett eigenständig. Die Millo-App ist ein anderes Projekt und gehö
 
 1. `git pull` im Huta-Ordner, `git status` und `git log --oneline -5` ansehen.
 2. `STAND.md` lesen: Was ist gemacht, was fehlt, was sind die nächsten Schritte.
-3. Kurz sagen, wo wir stehen und was als Nächstes ansteht. Bei Zweifeln im Repo und in der Datenbank nachsehen,
-   nicht aus dem Gedächtnis antworten.
+3. Kurz sagen, wo wir stehen und was als Nächstes ansteht. Steht in `STAND.md` der Abschnitt "Beim nächsten Mal
+   zuerst", diese Liste vollständig zeigen. Bei Zweifeln im Repo und in der Datenbank nachsehen, nicht aus dem
+   Gedächtnis antworten.
+4. Florian arbeitet an Windows oder am Mac. Befehle passend zum Rechner ausgeben (Windows: PowerShell mit `npx.cmd`,
+   Mac: Terminal mit `npx`).
 
 ## Ablauf bei Sitzungsende (wenn Florian aufhört oder "Schluss" sagt)
 
@@ -32,8 +35,8 @@ Huta ist komplett eigenständig. Die Millo-App ist ein anderes Projekt und gehö
 ## Arbeitsweise
 
 - Florian ist kein Programmierer. Antworten auf Deutsch, kurz, in einfachen Worten, die nächsten Schritte klar nennen.
-- Was er selbst tun muss (Apple, Google, Konten, Zugänge): genau sagen, welcher Klick oder Befehl. Befehle für PowerShell
-  in einen eigenen Codeblock.
+- Was er selbst tun muss (Apple, Google, Konten, Zugänge): genau sagen, welcher Klick oder Befehl. Jeden Befehl
+  (PowerShell oder Mac-Terminal) in einen eigenen Codeblock.
 - Passwörter und Schlüssel nie in Dateien oder ins Repo schreiben.
 - Der Anbieter (Dienstleister) und seine Mitarbeiter sind die Einzigen, die den Wochenplan ändern. Kunden sehen nur
   Eigenes und von anderen nur Hundenamen. Das ist über Zeilen-Sicherheit (RLS) in der Datenbank erzwungen. Nicht aufweichen.

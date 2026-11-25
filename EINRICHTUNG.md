@@ -2,10 +2,40 @@
 
 Reihenfolge von wichtig nach später. Schlüssel gibst du nur in die Webseiten und in dein Terminal ein, **nicht in den Chat**.
 
-Alle Befehle laufen im Huta-Ordner:
+Alle Befehle laufen im Huta-Ordner. Am Windows-Rechner:
 
 ```powershell
 cd C:\Users\Kotte\Desktop\Huta
+```
+
+## Am Mac
+
+Einmalig [Node.js](https://nodejs.org) (LTS) installieren. Dann im Programm "Terminal" nacheinander:
+
+```bash
+git clone https://github.com/flokotte-alt/HuTa-App.git ~/Desktop/Huta
+```
+
+```bash
+cd ~/Desktop/Huta
+```
+
+```bash
+npm install
+```
+
+```bash
+npx eas-cli login
+```
+
+Fragt Git beim ersten Befehl nach einer Anmeldung, nimm dein GitHub-Konto (am einfachsten mit der App "GitHub Desktop").
+Gibt es den Ordner schon, statt `git clone` im Ordner `git pull` und danach `npm install`.
+
+In allen Befehlen unten heißt es am Mac **`npx`** statt `npx.cmd`. Nur der Befehl für die Firebase-Datei (B, Schritt 3)
+sieht am Mac so aus:
+
+```bash
+npx eas-cli env:set --name GOOGLE_SERVICES_JSON --type file --value "$HOME/Downloads/google-services.json" --visibility sensitive --environment preview --environment production
 ```
 
 ## A. Google Cloud (Pflicht vor dem nächsten Build)
