@@ -86,7 +86,7 @@
         "expo-build-properties",
         {
           "android": { "kotlinVersion": "2.3.21" },
-          "ios": { "deploymentTarget": "17.0" }
+          "ios": { "deploymentTarget": "17.0", "useFrameworks": "dynamic" }
         }
       ],
       "@googlemaps/react-native-navigation-sdk",
