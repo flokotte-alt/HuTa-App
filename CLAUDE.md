@@ -40,5 +40,9 @@ Huta ist komplett eigenständig. Die Millo-App ist ein anderes Projekt und gehö
 - Dienstleister-Rechte werden nur serverseitig per SQL vergeben, nie über die App.
 - Testen: Web-Vorschau mit `npx expo start --web --port 8091`, Testkonten per SQL, danach alle Testdaten wieder löschen.
 - Builds: `npx eas-cli build --platform android|ios --profile preview`. iOS braucht Apples Login im Terminal von Florian.
-  Upload iOS: `npx eas-cli submit --platform ios --latest` (oder am Mac mit der Transporter-App).
+  Upload iOS: `npx eas-cli submit --platform ios --profile preview --latest` (oder am Mac mit der Transporter-App).
+- Updates ohne Build (OTA): nur bei reinen Code-, Text- oder Layout-Änderungen:
+  `npm run update -- --message "..."`. Umgebungsvariablen kommen aus Expo (Umgebung `preview`), nicht aus `.env`.
+- **Versionsregel:** Ein Update erreicht nur Builds mit derselben `version` in `app.json`. Bei neuem nativem Baustein oder
+  Änderung an nativen Einstellungen die `version` erhöhen und neu bauen. Sonst die `version` nie ändern.
 - Doku im Repo: `README.md` (was die App kann), `EINRICHTUNG.md` (was Florian anlegen muss), `TESTBERICHT.md`, `STAND.md`.

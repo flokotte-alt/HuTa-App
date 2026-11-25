@@ -1,72 +1,82 @@
 # Huta: Stand und Aufgaben
 
-Zuletzt aktualisiert: 24.11.2026 (abends)
+Zuletzt aktualisiert: 25.11.2026 (nachmittags)
 
 ## Kurzfassung
 
-Der Prototyp ist komplett gebaut, getestet (Web-Vorschau und Datenbank) und als Test-Build bei Apple (TestFlight) und
-Google (interner Test) hochgeladen. Florian hat ihn auf dem iPhone, hat sich als Dienstleister angemeldet und eine Fahrt
-ausprobiert. Urteil: passt im Grundsatz, es soll aber noch vieles geändert werden. Die Änderungswünsche sammelt Florian
-und gibt sie in den nächsten Tagen durch.
+Version 0.2.0 ist vorbereitet: alle nativen Bausteine für den nächsten Build sind eingebaut (Commit `ff932cc`).
+Die echten Builds fehlen noch, weil Florians Google-Schlüssel fehlen. Zwei Prüf-Builds mit Platzhalter-Schlüsseln
+laufen bei Expo. Auf einem Gerät ist von 0.2.0 noch nichts getestet. Optik und Änderungswünsche folgen später per Update.
 
 ## Zugänge und Kennungen (ohne Passwörter)
 
 - GitHub: `flokotte-alt/HuTa-App` (Zweig `main`)
 - Expo: `@flomillo/huta`, Projekt-ID `be64770f-2a68-467c-a3b8-abe8562e7164`
 - Supabase-Projekt: `eqzlxxvkxhxfejafoucl` (URL `https://eqzlxxvkxhxfejafoucl.supabase.co`)
-- App-Kennung: `de.dogworker.huta` (iOS und Android)
+- App-Kennung: `de.dogworker.huta` (iOS und Android), iOS-Erweiterung `de.dogworker.huta.ExpoWidgetsTarget`,
+  App-Gruppe `group.de.dogworker.huta`
 - Apple-Team: Florian Kotte (RW686BC248), App Store Connect App-ID `6838889246`, SKU `huta-001`,
   TestFlight-Gruppe "Team (Expo)"
 - Android: Play Console, App `de.dogworker.huta`, interner Test
-- Auf einem neuen Rechner: Repo klonen, `npm install`, `.env` aus `.env.example` anlegen (Werte stehen auch in `eas.json`).
+- Auf einem neuen Rechner: Repo klonen, `npm install`, `.env` aus `.env.example` anlegen
+  (Werte: `npx eas-cli env:list --environment preview`).
 - Dienstleister-Konto von Florian: `info@dogworker-dresden.de` (Passwort nur Florian bekannt, vorläufig und schwach, siehe Aufgaben).
 
-## Builds (Stand 24.11.2026)
+## Builds
 
-- Android (.aab, Profil preview): Build `059caac2-7100-4c93-89d7-b46a724f49bb`, in Play Console hochgeladen.
-- iOS (Profil preview): Build `7bb8055f-85f3-41fa-8354-1f924e2300c1`, Version 0.1.0, Build-Nr. 2, bei Apple verarbeitet,
-  in TestFlight installiert.
-- Code-Stand der Builds: Commit `66ff3e0`.
-- **Keine OTA-Updates eingebaut** (`expo-updates` fehlt). Code-Änderungen brauchen bisher immer einen neuen Build.
-  Datenbank-Änderungen wirken sofort.
+- Installiert sind noch die alten Test-Builds 0.1.0 (Commit `66ff3e0`) in TestFlight und im internen Play-Test.
+  Sie können **keine** Updates empfangen. Datenbank-Änderungen wirken auch dort.
+- Prüf-Builds 0.2.0 (Profil `kompiliertest`, nicht zum Verteilen, Karte und Navi ohne echte Schlüssel):
+  iOS-Simulator `f4baff71-b16f-40a1-a8fc-1cbe706a3113`, Android-APK `25f415e6-40ae-426f-8840-50d1686965eb`.
+  **Ergebnis prüfen.**
 
-## Was gebaut ist
+## Was in 0.2.0 neu ist
 
-Alles aus `README.md` (Verwaltung, Wochenplan, Fahrt mit Route, Daumen-Check, Krankmeldung, Wohnungs-Übergabe,
-Push, Hintergrund-Standort, Einwilligung, Konto löschen). Datenbank-Migrationen 0001 bis 0005 sind angewendet,
-Edge Function `plan-route` ist deployt (ohne Google-Schlüssel nur Schätzung).
-Beispieldaten sind eingespielt (8 erfundene Kunden, 12 Hunde, 6 Stationen, 2 Wochen Plan, 1 Schließzeit).
+- OTA-Updates (`expo-updates`, Kanäle `preview` und `production`, `runtimeVersion` = App-Version).
+- Navigation in der App (Google Navigation SDK, Beta, 0.19.1), Karte mit eigener Station für Kunden. iOS ab 17.
+- "Standort immer erlauben" für Dienstleister (Erklärung vor der Abfrage, Knopf unter "Mehr").
+- "Gleich bist du dran": eigener Ton, Android-Kanal `bald`, iPhone dringende Mitteilung (Migration 0006, angewendet).
+- Display bleibt während der Fahrt an, Querformat nur in der Navigation.
+- Bausteine ohne Funktion: Kamera, Fotos, Dokumente, PDF, Teilen, Live-Aktivität, Netz, SQLite, Animationen, Gesten,
+  SVG, Schriften, Datumsauswahl, Vibration, Dunkelmodus, Sentry, App-Links `dogworker-dresden.de/huta-app`.
+- Umgebungsvariablen liegen in Expo statt in `eas.json`. Datenschutztext um Karten, Navigation und Fehlerberichte ergänzt.
+
+Geprüft: Typprüfung, `expo-doctor` 20/20, Bundles für iOS, Android und Web bauen, erzeugte native Einstellungen,
+Migration 0006 mit zurückgerollten Testdaten (Kunde sieht nur eigene Station, ohne Anmeldung kein Zugriff).
+Nicht geprüft: Web-Vorschau im Browser, alles auf echten Geräten.
 
 ## Aufgaben für Claude
 
-1. **OTA einbauen** (`expo-updates`, Kanal je Profil in `eas.json`, `runtimeVersion`), dann einen gemeinsamen neuen
-   Build für iOS und Android mit allen Änderungswünschen von Florian. Ab dann Code-Änderungen per `eas update`.
-2. **Änderungswünsche von Florian** aufnehmen und umsetzen (Liste kommt in den nächsten Tagen).
-3. Optional: Zwei-Wochen-Übersicht für Dienstleister (Florian hat noch nicht geantwortet).
-4. Navigation in der App (Google Navigation SDK) bleibt "später". Bis dahin öffnet der Knopf Apple Karten bzw. Google Maps.
+1. Ergebnis der Prüf-Builds ansehen und Baufehler beheben.
+2. Wenn Florian A (Google) und B (Firebase) aus `EINRICHTUNG.md` erledigt hat: mit `env:list` prüfen, Android-Build
+   (`preview`) starten, Florian beim iOS-Build begleiten, Upload.
+3. Auf Geräten testen (Liste unten). Danach Änderungswünsche von Florian per Update umsetzen.
+4. Später: Dateien für App-Links auf der Website, Live-Aktivität (braucht eigenen Versand vom Server), Foto-Funktionen.
+5. Optional: Zwei-Wochen-Übersicht für Dienstleister (Florian hat noch nicht geantwortet).
 
 ## Aufgaben für Florian
 
-- Eigenen **Mail-Zugang (SMTP)** für Huta in Supabase hinterlegen (Registrierung per E-Mail klappt sonst nicht
-  zuverlässig: "email rate limit exceeded"). Danach "Passwort vergessen" nutzen und das schwache Passwort ändern.
-- **Google Cloud: Routes API** aktivieren, Schlüssel als Supabase-Secret `GOOGLE_MAPS_KEY` setzen (Route mit Verkehrsdaten).
-- **Firebase (FCM)**: Schlüssel für Push auf Android hinterlegen, danach neuer Android-Build. Schritte in `EINRICHTUNG.md`.
+- `EINRICHTUNG.md` A: Google-Schlüssel (Pflicht für den Build).
+- B: Firebase (Push auf Android). C: iPhone-Build mit Apple-Login. E: Sentry (jederzeit).
+- Eigenen **Mail-Zugang (SMTP)** für Huta in Supabase hinterlegen, danach das schwache Passwort ändern.
 - **Straße bestätigen:** "Jacobistraße 5" oder "Jakobistraße 5" (Kartendaten kennen nur "Jacobistraße").
-- **App-Name** bestätigen (Arbeitstitel "Huta").
-- **Datenschutztext und Einwilligung** rechtlich prüfen lassen, Kontakt-E-Mail in `src/lib/legal.ts` ersetzen (steht dort als Platzhalter).
+- **App-Name und App-Symbol** bestätigen (brauchen einen Build).
+- **Datenschutztext und Einwilligung** rechtlich prüfen lassen, Kontakt-E-Mail in `src/lib/legal.ts` ersetzen.
 - Echte Stationen und Kunden eintragen, wenn der Test vorbei ist (Beispieldaten sind erfunden).
-- Android-Test: Release im internen Test starten, sich als Tester eintragen, über den Test-Link installieren (Stand unbekannt).
-- Unbekannte Registrierung `crawlerrobo@gmail.com` (unbestätigt) in der Datenbank: prüfen, ob sie bekannt ist, sonst löschen lassen.
+- Entscheiden: Testroboter-Konto `crawlerrobo@gmail.com` löschen?
 
 ## Noch nicht auf einem echten Gerät getestet
 
-Standort im Hintergrund und automatische Ankunft, Push auf dem Handy, Öffnen der Karten-App, Anrufen und WhatsApp,
-Aussehen auf kleinen Bildschirmen und mit großer Schrift, Route mit echten Verkehrsdaten.
+Navigation, Kundenkarte, Updates ohne Build, "Standort immer", Standort im Hintergrund und automatische Ankunft,
+Push auf dem Handy samt eigenem Ton, Öffnen der Karten-App, Anrufen und WhatsApp, kleine Bildschirme und große Schrift,
+Route mit echten Verkehrsdaten.
 
 ## Entscheidungen
 
 - Zwei Apps, null Verbindung: Huta ist von der Millo-App komplett getrennt (siehe `CLAUDE.md`).
-- Kein Live-Standort für Kunden (bewusst, Datenschutz). Kunden sehen Countdown, Stopps und Uhrzeit.
+- Kein Live-Standort für Kunden (bewusst, Datenschutz). Kunden sehen Countdown, Stopps, Uhrzeit und die eigene Station.
+- 25.11.: "Standort immer" kommt mit in den Build. CarPlay, Android Auto, Bezahlen, Social-Login, Kontakte und Kalender nicht.
 - Daumen-Check öffnet 15 Minuten vor Ankunft. Wohnungs-Wunsch bis 20 Minuten vorher und nur für freigegebene Hunde.
 - Automatische Ankunft: 80 Meter, 45 Sekunden Verweildauer.
 - Dienstleister-Konten nur per SQL (`update public.profiles set role = 'provider' where email = ...`).
+- Testroboter-Konto `crawlerrobo@gmail.com` stammt von Google (Zugriffe von Google-Adressen am 24.11., nie eingeloggt).

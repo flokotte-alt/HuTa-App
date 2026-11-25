@@ -11,34 +11,52 @@ Supabase-Projekt, eigene App-Kennung (`de.dogworker.huta`).
   Urlaub der Kunden und Schließzeiten werden zur Information angezeigt.
 - Dienstplan (wer fährt), Schließzeiten, eigene Telefonnummer, Zusatzzeit für Wohnungs-Übergabe.
 - Fahrt: Startpunkt wählen, Route mit Verkehrsdaten (sobald der Google-Schlüssel eingetragen ist, sonst Schätzung),
-  Reihenfolge ändern, Start-Knopf, Standort wird geteilt (auch im Hintergrund), Stopp-Leiste mit Daumen-Status,
+  Reihenfolge ändern, Start-Knopf, Standort wird geteilt (auch im Hintergrund, "Standort immer erlauben"),
+  Navigation in der App (oder in der Karten-App), Display bleibt an, Stopp-Leiste mit Daumen-Status,
   "Nächster Stopp" und automatische Erkennung der Ankunft, Wohnungs-Wünsche übernehmen, Nachzügler erinnern, Fahrt beenden.
 
 **Kunden**
 - Wochenliste (nur Hundenamen), eigene Regeln, Schließzeiten, Urlaub eintragen.
-- Während der Fahrt: Countdown (Stopps, Minuten, Uhrzeit), Daumen-Check, Krankmeldung, Wohnungs-Wunsch, Anrufen und WhatsApp.
+- Während der Fahrt: Countdown (Stopps, Minuten, Uhrzeit), Karte mit der eigenen Station, Daumen-Check, Krankmeldung,
+  Wohnungs-Wunsch, Anrufen und WhatsApp.
 - Einwilligung beim ersten Start, Datenschutzseite, Konto und Daten löschen.
 
-**Push-Nachrichten:** Fahrt gestartet, "Gleich bist du dran" 15 Minuten vorher, neue Zeit bei mehr als 10 Minuten Verschiebung,
-Wochenplan veröffentlicht oder geändert, Krankmeldung und Wohnungs-Wunsch an die Dienstleister, Erinnerung an Nachzügler.
+**Push-Nachrichten:** Fahrt gestartet, "Gleich bist du dran" 15 Minuten vorher (eigener Ton, auf dem iPhone als dringende
+Mitteilung), neue Zeit bei mehr als 10 Minuten Verschiebung, Wochenplan veröffentlicht oder geändert, Krankmeldung und
+Wohnungs-Wunsch an die Dienstleister, Erinnerung an Nachzügler.
+
+## Im Build vorbereitet, Funktion folgt später per Update
+
+Kamera, Fotos und Code-Scan, Dokumente, PDF und Teilen, Countdown auf dem iPhone-Sperrbildschirm (Live-Aktivität),
+Netz-Erkennung und lokale Datenbank, Animationen, Gesten, Symbole, Schriften, Datumsauswahl, Vibration, Dunkelmodus,
+Fehlerberichte (aktiv sobald die Sentry-DSN hinterlegt ist), Links von der Website in die App.
 
 ## Noch nicht enthalten
 
-- Navigation direkt in der App (Google Navigation SDK). Stattdessen öffnet der Knopf "Navigation starten" Apple Karten
-  beziehungsweise Google Maps. Das SDK braucht ein Google-Cloud-Konto und eine eigene native Anbindung.
-- Karte mit Live-Standort für Kunden (bewusst nicht Teil der ersten Version).
+- Karte mit Live-Standort für Kunden (bewusst nicht Teil der ersten Version, später ohne neuen Build möglich).
+- CarPlay und Android Auto, Bezahlen, Google- oder Apple-Login.
 
-## Einrichtung und Builds
+## Updates und Builds
 
-Alles, was du selbst anlegen musst, steht in **EINRICHTUNG.md**.
+Alles, was du selbst anlegen musst, steht in **EINRICHTUNG.md**. Die App braucht iOS 17 oder neuer.
+
+**Änderung nur an Bildschirmen, Texten oder Logik:** Update ohne neuen Build.
 
 ```powershell
-npm install
-npm start
-npx eas-cli build --platform android --profile preview
-npx eas-cli build --platform ios --profile preview
-npx eas-cli submit --platform ios
+npm run update -- --message "Was geändert wurde"
 ```
+
+**Neuer nativer Baustein oder Änderung an `app.json`:** Versionsnummer in `app.json` erhöhen, dann neu bauen.
+
+```powershell
+npx.cmd eas-cli build --platform android --profile preview
+```
+
+```powershell
+npx.cmd eas-cli build --platform ios --profile preview
+```
+
+Prüf-Build ohne echte Schlüssel (nur ob alles zusammenbaut): `--profile kompiliertest`.
 
 ## Datenbank
 
