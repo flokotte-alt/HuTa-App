@@ -3,6 +3,7 @@ import { confirmDialog, notify } from '@/lib/dialog';
 import { AppState, Linking, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Btn, Card, H2, Row, Screen, T } from '@/components/ui';
+import { StationMap } from '@/components/StationMap';
 import { supabase } from '@/lib/supabase';
 import { STATUS_COLOR, STATUS_LABEL, colors } from '@/lib/theme';
 import { addDays, dayLabel, iso, mondayOf, parseIso, timeLabel } from '@/lib/dates';
@@ -27,23 +28,27 @@ type TripRow = {
 type WeekRow = { day: string; dog_name: string; status: string };
 type Dog = { id: string; name: string };
 type Contact = { name: string; phone: string | null };
+type MapRow = { trip_dog_id: string; station_label: string; lat: number; lng: number };
 
 export default function CustomerHome() {
   const [trips, setTrips] = useState<TripRow[]>([]);
   const [week, setWeek] = useState<WeekRow[]>([]);
   const [myDogs, setMyDogs] = useState<Dog[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
+  const [places, setPlaces] = useState<MapRow[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(Date.now());
 
   const load = useCallback(async () => {
     const from = mondayOf(new Date());
-    const [t, w, d, c] = await Promise.all([
+    const [t, w, d, c, m] = await Promise.all([
       supabase.rpc('my_trip_status'),
       supabase.rpc('week_names', { p_from: iso(from), p_to: iso(addDays(from, 13)) }),
       supabase.from('dogs').select('id, name'),
       supabase.rpc('todays_contact', {}),
+      supabase.rpc('my_trip_map'),
     ]);
+    setPlaces((m.data as MapRow[]) ?? []);
     setTrips((t.data as TripRow[]) ?? []);
     setWeek((w.data as WeekRow[]) ?? []);
     setMyDogs((d.data as Dog[]) ?? []);
@@ -115,6 +120,7 @@ export default function CustomerHome() {
     >
       {trips.map((t) => {
         const minutes = Math.max(0, Math.round((new Date(t.eta).getTime() - now) / 60000));
+        const place = places.find((p) => p.trip_dog_id === t.trip_dog_id);
         return (
           <Card key={t.trip_dog_id} style={{ borderColor: colors.primary, borderWidth: 2 }}>
             <T bold color={colors.primary}>
@@ -132,6 +138,14 @@ export default function CustomerHome() {
                 <T>
                   Ankunft in ca. {minutes} Min · {timeLabel(t.eta)} Uhr
                 </T>
+              </>
+            )}
+            {!t.sick && !t.arrived && place && t.handover === 'station' && (
+              <>
+                <T small muted>
+                  Deine Station: {place.station_label}
+                </T>
+                <StationMap lat={place.lat} lng={place.lng} label={place.station_label} />
               </>
             )}
             {!t.sick && !t.arrived && (

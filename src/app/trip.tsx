@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, Platform, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Location from 'expo-location';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Btn, Card, Chip, H2, Row, Screen, Spinner, T } from '@/components/ui';
@@ -11,6 +12,8 @@ import { dayLabel, iso, timeLabel } from '@/lib/dates';
 import { computeEtas, orderStops, type Pt } from '@/lib/trip';
 import { arriveCurrentStop, currentOrigin, recomputeEtas } from '@/lib/tripOps';
 import { startTracking, stopTracking } from '@/lib/tracking';
+import { askAlwaysLocationOnce } from '@/lib/locationPermission';
+import { openMaps } from '@/lib/maps';
 
 type Direction = 'morning' | 'afternoon';
 type Cand = { dog_id: string; dog_name: string; station_id: string | null; station_label: string | null; lat: number | null; lng: number | null; handover: string };
@@ -101,11 +104,21 @@ export default function TripScreen() {
     if (trip?.state === 'running') {
       startTracking(trip.id).then((r) => {
         if (r === 'denied') setInfo('Standort ist nicht erlaubt. Die Kunden sehen dann nur die geschätzten Zeiten.');
+        if (r === 'ok') askAlwaysLocationOnce();
       });
     } else if (trip?.state === 'done') {
       stopTracking();
     }
   }, [trip?.id, trip?.state]);
+
+  // Display bleibt waehrend der Fahrt an
+  useEffect(() => {
+    if (Platform.OS === 'web' || trip?.state !== 'running') return;
+    activateKeepAwakeAsync('huta-fahrt').catch(() => {});
+    return () => {
+      deactivateKeepAwake('huta-fahrt').catch(() => {});
+    };
+  }, [trip?.state]);
 
   // Reihenfolge und Zeiten berechnen: mit Verkehrsdaten (Google), sonst Naeherung
   const recalc = useCallback(
@@ -228,11 +241,6 @@ export default function TripScreen() {
     loadRun();
   }
 
-  function openMaps(p: Pt) {
-    const url = Platform.OS === 'ios' ? `http://maps.apple.com/?daddr=${p.lat},${p.lng}&dirflg=d` : `google.navigation:q=${p.lat},${p.lng}`;
-    Linking.openURL(url).catch(() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`));
-  }
-
   if (loading) return <Spinner />;
 
   const title = `${direction === 'morning' ? 'Morgens einsammeln' : 'Nachmittags zurückbringen'} · ${dayLabel(new Date())}`;
@@ -276,7 +284,21 @@ export default function TripScreen() {
                 </T>
               </Row>
             ))}
-            {current.stations && <Btn kind="dark" title="Navigation starten" onPress={() => openMaps(current.stations!)} />}
+            {current.stations && (
+              <>
+                <Btn
+                  kind="dark"
+                  title="Navigation starten"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/navigate',
+                      params: { lat: String(current.stations!.lat), lng: String(current.stations!.lng), label: current.stations!.label },
+                    })
+                  }
+                />
+                <Btn kind="ghost" title="In Karten-App öffnen" onPress={() => openMaps(current.stations!)} />
+              </>
+            )}
             <Btn title="Nächster Stopp (Hunde sind da)" onPress={nextStop} busy={busy} />
             <T small muted>
               Der Stopp wird auch automatisch erkannt, wenn du kurz an der Station hältst.

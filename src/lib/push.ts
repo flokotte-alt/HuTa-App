@@ -25,6 +25,13 @@ export async function registerPush(ask: boolean): Promise<PushState> {
       name: 'Huta',
       importance: Notifications.AndroidImportance.HIGH,
     });
+    // "Gleich bist du dran" mit eigenem Ton
+    await Notifications.setNotificationChannelAsync('bald', {
+      name: 'Gleich bist du dran',
+      importance: Notifications.AndroidImportance.MAX,
+      sound: 'huta_bald.wav',
+      vibrationPattern: [0, 300, 200, 300],
+    });
   }
   let { status } = await Notifications.getPermissionsAsync();
   if (status !== 'granted' && ask) status = (await Notifications.requestPermissionsAsync()).status;

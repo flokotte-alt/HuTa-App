@@ -1,29 +1,35 @@
 {
   "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://eqzlxxvkxhxfejafoucl.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_KEY": "sb_publishable_2sEYcvDyf-lEddQ0tE7jXw_WS4VEH7a"
-      }
-    },
     "preview": {
       "distribution": "store",
       "autoIncrement": true,
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://eqzlxxvkxhxfejafoucl.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_KEY": "sb_publishable_2sEYcvDyf-lEddQ0tE7jXw_WS4VEH7a"
-      }
+      "channel": "preview",
+      "environment": "preview"
     },
     "production": {
       "autoIncrement": true,
+      "channel": "production",
+      "environment": "production"
+    },
+    "kompiliertest": {
+      "distribution": "internal",
+      "environment": "preview",
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://eqzlxxvkxhxfejafoucl.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_KEY": "sb_publishable_2sEYcvDyf-lEddQ0tE7jXw_WS4VEH7a"
-      }
+        "GOOGLE_MAPS_IOS_KEY": "PLATZHALTER",
+        "GOOGLE_MAPS_ANDROID_KEY": "PLATZHALTER"
+      },
+      "ios": { "simulator": true },
+      "android": { "buildType": "apk" }
     }
   },
-  "submit": { "production": {} }
+  "submit": {
+    "preview": {
+      "ios": { "ascAppId": "6838889246" },
+      "android": { "track": "internal" }
+    },
+    "production": {
+      "ios": { "ascAppId": "6838889246" }
+    }
+  }
 }

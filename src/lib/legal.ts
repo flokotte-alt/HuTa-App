@@ -1,5 +1,5 @@
 // ENTWURF: Datenschutztexte vor dem echten Einsatz rechtlich pruefen lassen.
-export const CONSENT_VERSION = '2026-11-entwurf';
+export const CONSENT_VERSION = '2026-11-entwurf-2';
 
 export const PRIVACY_TEXT: { title: string; body: string }[] = [
   {
@@ -12,7 +12,15 @@ export const PRIVACY_TEXT: { title: string; body: string }[] = [
   },
   {
     title: 'Standort',
-    body: 'Der Standort des Fahrzeugs wird nur während einer laufenden Fahrt vom Gerät des Fahrers übertragen und nur als aktueller Wert gespeichert. Nach dem Ende der Fahrt wird er gelöscht. Dein eigener Standort wird nicht erfasst. Andere Kunden sehen weder Standorte noch Adressen.',
+    body: 'Der Standort des Fahrzeugs wird nur während einer laufenden Fahrt vom Gerät des Fahrers übertragen, auch bei gesperrtem Handy oder wenn die App im Hintergrund ist, und nur als aktueller Wert gespeichert. Nach dem Ende der Fahrt wird er gelöscht. Dein eigener Standort wird nicht erfasst. Andere Kunden sehen weder Standorte noch Adressen.',
+  },
+  {
+    title: 'Karten und Navigation',
+    body: 'Karten und die Navigation für die Fahrer kommen von Google Maps. Beim Anzeigen einer Karte erhält Google technische Daten wie IP-Adresse und Geräteangaben, bei der Navigation zusätzlich den Standort des Fahrergeräts und das Ziel.',
+  },
+  {
+    title: 'Fehlerberichte',
+    body: 'Stürzt die App ab, kann ein technischer Fehlerbericht (Gerätetyp, Systemversion, Fehlerstelle) an den Dienst Sentry übermittelt werden.',
   },
   {
     title: 'Push-Nachrichten',
@@ -20,7 +28,7 @@ export const PRIVACY_TEXT: { title: string; body: string }[] = [
   },
   {
     title: 'Dienstleister, die wir nutzen',
-    body: 'Supabase (Datenbank und Anmeldung, Rechenzentrum in Frankfurt), Google (Routenberechnung mit Verkehrsdaten, ohne Namen oder Hundedaten) und die Push-Dienste von Expo, Apple und Google. Es gibt keine Werbung und keine Weitergabe zu anderen Zwecken.',
+    body: 'Supabase (Datenbank und Anmeldung, Rechenzentrum in Frankfurt), Google (Karten, Navigation und Routenberechnung, ohne Namen oder Hundedaten), Sentry (Fehlerberichte) und die Push-Dienste von Expo, Apple und Google. Es gibt keine Werbung und keine Weitergabe zu anderen Zwecken.',
   },
   {
     title: 'Deine Rechte',

@@ -4,7 +4,9 @@ import { useFocusEffect } from 'expo-router';
 import { Btn, Card, Chip, Field, H2, Row, Screen, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { colors } from '@/lib/theme';
 import { addDays, dayLabel, iso, rangeLabel } from '@/lib/dates';
+import { alwaysLocationState, requestAlwaysLocation, type AlwaysState } from '@/lib/locationPermission';
 
 type Prov = { id: string; name: string; phone: string | null; email: string | null };
 type Duty = { day: string; driver_id: string };
@@ -18,6 +20,7 @@ export default function More() {
   const [extra, setExtra] = useState('5');
   const [phone, setPhone] = useState('');
   const [cl, setCl] = useState({ from: '', to: '', note: '' });
+  const [always, setAlways] = useState<AlwaysState>('unavailable');
 
   const load = useCallback(async () => {
     const today = iso(new Date());
@@ -37,6 +40,7 @@ export default function More() {
   useFocusEffect(
     useCallback(() => {
       load();
+      alwaysLocationState().then(setAlways);
     }, [load]),
   );
 
@@ -125,6 +129,17 @@ export default function More() {
           }}
         />
       </Card>
+
+      {always !== 'unavailable' && (
+        <Card>
+          <T bold>Standort während der Fahrt</T>
+          {always === 'granted' ? (
+            <T color={colors.green}>Immer erlaubt</T>
+          ) : (
+            <Btn title="Standort immer erlauben" onPress={() => requestAlwaysLocation(() => alwaysLocationState().then(setAlways))} />
+          )}
+        </Card>
+      )}
 
       <T small muted>
         Angemeldet als {profile?.name || profile?.email}

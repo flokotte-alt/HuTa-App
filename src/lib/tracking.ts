@@ -8,7 +8,7 @@ import { distKm } from './trip';
 import { arriveCurrentStop } from './tripOps';
 
 export const TRACK_TASK = 'huta-trip-location';
-const ACTIVE_KEY = 'huta:activeTrip';
+export const ACTIVE_KEY = 'huta:activeTrip';
 const DWELL_KEY = 'huta:dwell';
 const ARRIVE_RADIUS_KM = 0.08; // 80 Meter
 const DWELL_MS = 45_000; // so lange muss das Auto dort stehen
