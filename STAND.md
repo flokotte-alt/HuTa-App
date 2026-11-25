@@ -27,8 +27,10 @@ laufen bei Expo. Auf einem Gerät ist von 0.2.0 noch nichts getestet. Optik und 
 - Installiert sind noch die alten Test-Builds 0.1.0 (Commit `66ff3e0`) in TestFlight und im internen Play-Test.
   Sie können **keine** Updates empfangen. Datenbank-Änderungen wirken auch dort.
 - Prüf-Builds 0.2.0 (Profil `kompiliertest`, nicht zum Verteilen, Karte und Navi ohne echte Schlüssel):
-  iOS-Simulator `f4baff71-b16f-40a1-a8fc-1cbe706a3113`, Android-APK `25f415e6-40ae-426f-8840-50d1686965eb`.
-  **Ergebnis prüfen.**
+  - iOS-Simulator `6de96a14-f62f-4762-8991-5df014895b08` (Commit `4c7a6a1`): **erfolgreich**. Zwei Fehlversuche davor
+    (Linker-Fehler). Lösung: GoogleMaps auf 11.3.0 festgelegt (`plugins/withGoogleMapsVersion.js`), dazu
+    `useFrameworks: dynamic` wie im Google-Beispiel.
+  - Android-APK `25f415e6-40ae-426f-8840-50d1686965eb` (Commit `ff932cc`): **Ergebnis prüfen.**
 
 ## Was in 0.2.0 neu ist
 
