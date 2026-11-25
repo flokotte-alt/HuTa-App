@@ -5,8 +5,8 @@ Zuletzt aktualisiert: 25.11.2026 (nachmittags)
 ## Kurzfassung
 
 Version 0.2.0 ist vorbereitet: alle nativen Bausteine für den nächsten Build sind eingebaut (Commit `ff932cc`).
-Die echten Builds fehlen noch, weil Florians Google-Schlüssel fehlen. Zwei Prüf-Builds mit Platzhalter-Schlüsseln
-laufen bei Expo. Auf einem Gerät ist von 0.2.0 noch nichts getestet. Optik und Änderungswünsche folgen später per Update.
+Die echten Builds fehlen noch, weil Florians Google-Schlüssel fehlen. Die Prüf-Builds mit Platzhalter-Schlüsseln
+sind für iOS und Android erfolgreich. Auf einem Gerät ist von 0.2.0 noch nichts getestet. Optik und Änderungswünsche folgen später per Update.
 
 ## Zugänge und Kennungen (ohne Passwörter)
 
@@ -30,7 +30,7 @@ laufen bei Expo. Auf einem Gerät ist von 0.2.0 noch nichts getestet. Optik und 
   - iOS-Simulator `6de96a14-f62f-4762-8991-5df014895b08` (Commit `4c7a6a1`): **erfolgreich**. Zwei Fehlversuche davor
     (Linker-Fehler). Lösung: GoogleMaps auf 11.3.0 festgelegt (`plugins/withGoogleMapsVersion.js`), dazu
     `useFrameworks: dynamic` wie im Google-Beispiel.
-  - Android-APK `25f415e6-40ae-426f-8840-50d1686965eb` (Commit `ff932cc`): **Ergebnis prüfen.**
+  - Android-APK `25f415e6-40ae-426f-8840-50d1686965eb` (Commit `ff932cc`): **erfolgreich**. Danach nur iOS-Einstellungen geändert.
 
 ## Was in 0.2.0 neu ist
 
@@ -49,12 +49,11 @@ Nicht geprüft: Web-Vorschau im Browser, alles auf echten Geräten.
 
 ## Aufgaben für Claude
 
-1. Ergebnis der Prüf-Builds ansehen und Baufehler beheben.
-2. Wenn Florian A (Google) und B (Firebase) aus `EINRICHTUNG.md` erledigt hat: mit `env:list` prüfen, Android-Build
+1. Wenn Florian A (Google) und B (Firebase) aus `EINRICHTUNG.md` erledigt hat: mit `env:list` prüfen, Android-Build
    (`preview`) starten, Florian beim iOS-Build begleiten, Upload.
-3. Auf Geräten testen (Liste unten). Danach Änderungswünsche von Florian per Update umsetzen.
-4. Später: Dateien für App-Links auf der Website, Live-Aktivität (braucht eigenen Versand vom Server), Foto-Funktionen.
-5. Optional: Zwei-Wochen-Übersicht für Dienstleister (Florian hat noch nicht geantwortet).
+2. Auf Geräten testen (Liste unten). Danach Änderungswünsche von Florian per Update umsetzen.
+3. Später: Dateien für App-Links auf der Website, Live-Aktivität (braucht eigenen Versand vom Server), Foto-Funktionen.
+4. Optional: Zwei-Wochen-Übersicht für Dienstleister (Florian hat noch nicht geantwortet).
 
 ## Aufgaben für Florian
 
