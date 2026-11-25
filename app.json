@@ -90,6 +90,7 @@
         }
       ],
       "@googlemaps/react-native-navigation-sdk",
+      "./plugins/withGoogleMapsVersion",
       [
         "expo-camera",
         {
