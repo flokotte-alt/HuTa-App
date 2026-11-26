@@ -7,16 +7,20 @@ Zuletzt aktualisiert: 26.11.2026
 Das neue Konzept ist gebaut (Version 0.3.0). Bericht und alle Entscheidungen: **`UMSETZUNG.md`**.
 Befehle passend zum Rechner ausgeben.
 
-**26.11.: iPhone-Test ohne Google-Schlüssel (von Florian gewünscht). Vorbereitet, aber noch nicht gebaut:**
-Der Start ohne Login ist abgebrochen, weil für die Erweiterung `ExpoWidgetsTarget` noch kein Apple-Profil besteht.
-Dabei hat Expo bei Apple die Kennung `de.dogworker.huta.ExpoWidgetsTarget` registriert (mit "App Groups"). Es ist
-kein Build entstanden und nichts hochgeladen. Florian startet in seinem Terminal (Apple-ID anmelden, alles mit Ja):
+**26.11.: iPhone-Test ohne Google-Schlüssel (von Florian gewünscht). Fehler behoben, neuer Build noch nicht
+gestartet.** Florians Build `88835c60` (0.3.0, Build 4, Commit `5331f02`) brach beim Archivieren ab: Xcode legte die
+Signaturdateien der Google-Bausteine doppelt an. Korrektur in `d5875b3` (`plugins/withSignatureCleanup.js`), hier
+ohne Mac geprüft, **erst der nächste Build zeigt, ob sie reicht**. Claude wollte neu starten, die
+Berechtigungsprüfung der Sitzung hat das blockiert. Apple-Zertifikat, Profile und Push sind seit Florians Lauf bei
+Expo eingerichtet. Florian startet in seinem Terminal:
 
 ```powershell
 npx.cmd eas-cli build --platform ios --profile ohne-google --auto-submit-with-profile preview --no-wait
 ```
 
 - Der Befehl baut und lädt selbst zu TestFlight hoch. Im Gratis-Tarif kann die Warteschlange Stunden dauern.
+- Im Log von `88835c60`: Warnung, die Build-Nummer der Erweiterung (1) weicht von der der App ab. Kein Abbruch;
+  Apple meldet so etwas vermutlich nur als Hinweis. Bei Bedarf angleichen.
 - Falls nur das Hochladen scheitert: `npx.cmd eas-cli submit --platform ios --profile preview --latest`
 - Florians Zustimmung gilt für genau diesen einen iPhone-Build samt TestFlight. Kein Android, keine App-Store-Prüfung.
 - Ohne Funktion: Karte, Navigation, Streckenwechsel, Verkehrsdaten. Am Gerät prüfen, ob die App startet.
