@@ -1,57 +1,72 @@
+// Laufende Fahrt: laden, weiterschalten, Zeiten neu rechnen
 import { supabase } from './supabase';
-import { computeEtas, type Pt } from './trip';
+import { planRoute } from './route';
+import type { Pt } from './trip';
 
-type StopRow = {
+export type RunDog = {
+  id: string;
+  dog_id: string;
+  handover: 'station' | 'apartment';
+  thumb_at: string | null;
+  apartment_requested_at: string | null;
+  dogs: { name: string } | null;
+};
+export type RunStop = {
   id: string;
   position: number;
+  eta: string;
   arrived_at: string | null;
   extra_minutes: number;
-  stations: { lat: number; lng: number } | null;
-  trip_dogs: { sick: boolean }[];
+  stations: { label: string; lat: number; lng: number } | null;
+  trip_dogs: RunDog[];
+};
+export type Trip = {
+  id: string;
+  day: string;
+  direction: 'morning' | 'afternoon';
+  state: 'planned' | 'running' | 'done';
+  driver_id: string | null;
+  start_label: string | null;
+  start_lat: number | null;
+  start_lng: number | null;
+  end_label: string | null;
+  end_lat: number | null;
+  end_lng: number | null;
 };
 
-// Eine Station zaehlt nur, solange mindestens ein Hund nicht krank gemeldet ist
-export const isActiveStop = (s: { trip_dogs: { sick: boolean }[] }) => s.trip_dogs.some((d) => !d.sick);
-
-const DWELL_MIN = 2;
-
-async function loadStops(tripId: string) {
-  const { data } = await supabase
+export async function loadStops(tripId: string): Promise<RunStop[] | null> {
+  const { data, error } = await supabase
     .from('trip_stops')
-    .select('id, position, arrived_at, extra_minutes, stations(lat, lng), trip_dogs(sick)')
+    .select('id, position, eta, arrived_at, extra_minutes, stations(label, lat, lng), trip_dogs(id, dog_id, handover, thumb_at, apartment_requested_at, dogs(name))')
     .eq('trip_id', tripId)
     .order('position');
-  return ((data as unknown as StopRow[]) ?? []).filter((s) => s.stations);
+  if (error) return null;
+  return (data as unknown as RunStop[]) ?? [];
 }
 
-// Neue Ankunftszeiten fuer alle offenen Stationen ab einem Ort und Zeitpunkt
-export async function recomputeEtas(tripId: string, from: Pt, at: Date) {
+// Bestaetigt ist ein Hund mit Daumen oder wenn er in die Wohnung gebracht wird (dann ist alles klar)
+export const isConfirmed = (d: RunDog) => d.handover === 'apartment' || !!d.thumb_at;
+
+// Zeiten aller offenen Stationen ab einem Ort neu rechnen (mit Verkehrsdaten, sobald Google eingerichtet ist)
+async function recomputeEtas(tripId: string, from: Pt) {
   const stops = await loadStops(tripId);
-  const open = stops.filter((s) => !s.arrived_at && isActiveStop(s));
-  const etas = computeEtas(
+  if (!stops) return;
+  const open = stops.filter((s) => !s.arrived_at && s.stations);
+  if (!open.length) return;
+  const last = open[open.length - 1].stations!;
+  const { etas } = await planRoute(
     from,
+    last,
     open.map((s) => ({ lat: s.stations!.lat, lng: s.stations!.lng, extra: s.extra_minutes })),
-    at,
+    false,
   );
   await Promise.all(open.map((s, i) => supabase.from('trip_stops').update({ eta: etas[i].toISOString() }).eq('id', s.id)));
 }
 
-// Aktuelle Station als erreicht markieren und den Rest neu rechnen
-export async function arriveCurrentStop(tripId: string): Promise<boolean> {
-  const stops = await loadStops(tripId);
-  const cur = stops.find((s) => !s.arrived_at && isActiveStop(s));
-  if (!cur) return false;
-  const now = new Date();
-  await supabase.from('trip_stops').update({ arrived_at: now.toISOString() }).eq('id', cur.id);
-  await recomputeEtas(tripId, cur.stations!, new Date(now.getTime() + (DWELL_MIN + cur.extra_minutes) * 60000));
-  return true;
-}
-
-// Von wo aus gerade gerechnet wird: letzte erledigte Station oder der Startpunkt
-export async function currentOrigin(tripId: string): Promise<Pt | null> {
-  const stops = await loadStops(tripId);
-  const done = stops.filter((s) => s.arrived_at).pop();
-  if (done?.stations) return done.stations;
-  const { data: t } = await supabase.from('trips').select('start_lat, start_lng').eq('id', tripId).maybeSingle();
-  return t && t.start_lat != null ? { lat: t.start_lat, lng: t.start_lng } : null;
+// Grosser Knopf "Naechster Stopp". Gibt true zurueck, wenn das der letzte Stopp war.
+export async function arriveStop(tripId: string, stop: RunStop): Promise<boolean> {
+  const { data, error } = await supabase.rpc('arrive_stop', { p_trip: tripId, p_stop: stop.id });
+  if (error) throw error;
+  if (!data && stop.stations) await recomputeEtas(tripId, stop.stations);
+  return !!data;
 }

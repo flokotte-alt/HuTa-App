@@ -126,24 +126,36 @@ npx.cmd eas-cli env:set --name EXPO_PUBLIC_SENTRY_DSN --visibility plaintext --e
 3. Für lesbare Fehlerstellen zusätzlich `SENTRY_ORG`, `SENTRY_PROJECT` und `SENTRY_AUTH_TOKEN` (Organisations-Token,
    Sichtbarkeit `sensitive`) genauso hinterlegen. Diese wirken erst ab dem nächsten Build.
 
-## F. E-Mail-Versand (Pflicht vor echten Kunden)
+## F. Registrierung abschalten (Pflicht, 1 Minute)
 
-Das eingebaute Supabase-System schickt nur sehr wenige Mails. Für Bestätigungs-Mails und "Passwort vergessen":
+Konten legt seit dem neuen Konzept nur noch ihr an. Deshalb:
 
-1. Supabase, Projekt "Huta", Authentication, SMTP Settings, eigenen SMTP-Zugang eintragen (Absender-Adresse von Dogworker).
-2. Authentication, URL Configuration: eigene Adresse eintragen, damit Bestätigungslinks sinnvoll öffnen.
-3. "Confirm email" besser an lassen. Die Zuordnung zu Hunden läuft über die E-Mail.
+1. [supabase.com/dashboard](https://supabase.com/dashboard), Projekt **Huta**.
+2. "Authentication", "Sign In / Providers".
+3. **"Allow new users to sign up"** ausschalten, "Save".
 
-## G. Dienstleister-Konto freischalten
+Ein eigener Mail-Zugang (SMTP) ist nicht mehr nötig, die App verschickt keine E-Mails.
 
-1. In der App "Neu hier? Konto anlegen".
-2. Claude Bescheid sagen oder im SQL-Editor von Supabase "Huta":
+## G. Konten
+
+**Kunden:** in der App unter "Kunden", Kunde öffnen, E-Mail eintragen, speichern, "Zugang mit Einmalpasswort anlegen".
+Das Passwort wird nur einmal angezeigt. Der Kunde setzt beim ersten Login sein eigenes.
+
+**Mitarbeiterin (Dienstleister):**
+
+1. Supabase, Projekt "Huta", "Authentication", "Users", "Add user", "Create new user".
+   E-Mail und Passwort eintragen, "Auto Confirm User" anhaken.
+2. Claude Bescheid sagen oder im SQL-Editor:
    `update public.profiles set role = 'provider' where email = 'DEINE@MAIL';`
+3. In der App unter "Einstellungen" Name eintragen und Passwort ändern.
 
 ## H. Vor dem Start mit echten Kunden
 
-- Datenschutztexte in `src/lib/legal.ts` rechtlich prüfen lassen und die Kontakt-E-Mail eintragen.
-- Echte Stationen, Kunden und Hunde eintragen. Beispieldaten in der Verwaltung löschen.
+- Datenschutzerklärung und AGB liefern. Der Platzhalter steht in `src/lib/legal.ts`, dort auch die Kontakt-E-Mail ergänzen.
+- Je Hund E-Mail des Kunden, "Kunde seit", feste Tage und Stationen nachtragen.
+- Unter "Einstellungen", "Schließzeiten" den Beispiel-Eintrag löschen oder richtigstellen.
+- Unter "Einstellungen", "Stationen" Start- und Zielpunkte prüfen ("Huta (Halsbrücke)": genaue Adresse).
 - Station "Jacobistraße 5": Schreibweise prüfen (Kartendaten kennen nur "Jacobistraße").
-- App-Name und App-Symbol festlegen (`name` und `icon` in `app.json`, `APP_NAME` in `src/lib/theme.ts`). Braucht einen neuen Build.
+- App-Name und App-Symbol bestätigen (Änderung braucht einen neuen Build).
+- In der Google-Konsole unter "Abrechnung" ein Budget mit Warnung anlegen (Kosten siehe `UMSETZUNG.md`).
 - Damit Links von `dogworker-dresden.de/huta-app` die App öffnen: zwei kleine Dateien auf der Website ablegen (Claude erstellt sie).

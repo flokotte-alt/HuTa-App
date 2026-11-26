@@ -1,4 +1,19 @@
-# Testbericht (24.11.2026, Web-Vorschau gegen das echte Huta-Projekt)
+# Testbericht (26.11.2026, neues Konzept, Version 0.3.0)
+
+- Typprüfung ohne Fehler. Bundles für iOS, Android und Web bauen. Native Einstellungen werden fehlerfrei erzeugt.
+- `expo-doctor`: ein Hinweis (neuere Patch-Versionen einiger Pakete verfügbar), sonst bestanden.
+- Datenbank: 94 Rechte- und Logikprüfungen in einer lokalen Datenbank (PGlite) mit allen Migrationen. Spalten,
+  Funktionen und Zugriffsregeln im Huta-Projekt stimmen nach Migration 0007 damit überein.
+- Web-Vorschau in Handygröße gegen einen lokalen Test-Server (keine Testdaten im echten Projekt): Anmeldung,
+  Tagesliste, Wochentabelle, Veröffentlichen, Route, Fahrt, Live-Banner, Wohnungs-Button, Bestätigen, Album,
+  Kundenzugang, erster Login, Urlaub, Hunderegeln, Einstellungen, Dunkelmodus.
+- Server-Funktionen im Projekt: starten, Aufrufe ohne Anmeldung abgewiesen, Aufräum-Auftrag antwortet.
+
+Nicht getestet: alles auf echten Geräten, Google-Dienste, Live-Aktualisierung, Datei- und Foto-Upload, echtes Anmelden.
+
+---
+
+# Älter: Testbericht (24.11.2026, Version 0.1.0, überholt)
 
 Getestet mit einem Dienstleister-Konto und drei Kunden-Konten. Danach wurden alle Testkonten und Testdaten gelöscht.
 

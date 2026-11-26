@@ -1,5 +1,12 @@
 -- Huta: Beispieldaten (erfundene Kunden und Hunde). Alles ist spaeter in der App aenderbar.
 -- Wochentage: 1 = Montag ... 7 = Sonntag.
+-- NICHT im echten Projekt ausfuehren: Dort liegen echte Stationen und Hunde.
+
+do $$ begin
+  if exists (select 1 from public.customers) then
+    raise exception 'seed.sql ist nur fuer eine leere Datenbank gedacht';
+  end if;
+end $$;
 
 insert into public.stations (label, address, lat, lng) values
   ('Hölderlinstraße 9', 'Hölderlinstraße 9, Dresden', 51.0488177, 13.6885685),

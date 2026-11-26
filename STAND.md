@@ -1,26 +1,26 @@
 # Huta: Stand und Aufgaben
 
-Zuletzt aktualisiert: 25.11.2026 (Tagesende)
+Zuletzt aktualisiert: 26.11.2026
 
 ## Beim nächsten Mal zuerst (Claude: Florian diese Liste direkt zeigen)
 
-Florian hat am 25.11. Schluss gemacht, bevor er A bis C erledigen konnte. Er möchte die Schritte beim nächsten Mal
-wieder genannt bekommen, auch am Mac. Befehle passend zum Rechner ausgeben.
+Das neue Konzept ist gebaut (Version 0.3.0). Bericht und alle Entscheidungen: **`UMSETZUNG.md`**.
+Befehle passend zum Rechner ausgeben.
 
-1. **A. Google-Schlüssel** (Pflicht für beide Builds): Google-Cloud-Projekt "Huta", vier APIs aktivieren, drei
-   Schlüssel anlegen, zwei bei Expo und einen bei Supabase hinterlegen.
-2. **B. Firebase** (vor dem Android-Build, sonst kein Push auf Android).
-3. Florian schreibt "A und B fertig". Claude prüft mit `env:list` und startet den Android-Build.
-4. **C. iPhone-Build** mit Florians Apple-Login, danach Upload zu TestFlight.
-5. Auf den Handys testen: Navi, Kundenkarte, "Standort immer", Push mit eigenem Ton, erstes Update ohne Build.
-
-Alle Klicks und Befehle: `EINRICHTUNG.md` (mit Abschnitt "Am Mac"). Sentry geht jederzeit.
+1. **Entscheidungen prüfen** (`UMSETZUNG.md`, Abschnitt 7).
+2. **Registrierung abschalten** in Supabase (`EINRICHTUNG.md`, F).
+3. **A. Google-Schlüssel** (Pflicht für den Build): Projekt "Huta", vier APIs, drei Schlüssel.
+4. **B. Firebase** (vor dem Android-Build, sonst kein Push auf Android).
+5. Florian schreibt "A und B fertig" und erlaubt den Build. Claude prüft mit `env:list` und startet den Android-Build.
+6. **C. iPhone-Build** mit Florians Apple-Login, danach Upload zu TestFlight.
+7. Auf den Handys testen (Liste unten). Daten nachtragen (E-Mails, feste Tage, Stationen).
 
 ## Kurzfassung
 
-Version 0.2.0 ist vorbereitet: alle nativen Bausteine für den nächsten Build sind eingebaut (Commit `ff932cc`).
-Die echten Builds fehlen noch, weil Florians Google-Schlüssel fehlen. Die Prüf-Builds mit Platzhalter-Schlüsseln
-sind für iOS und Android erfolgreich. Auf einem Gerät ist von 0.2.0 noch nichts getestet. Optik und Änderungswünsche folgen später per Update.
+Am 26.11. wurde das neue Konzept aus dem Google Drive ("Huta App", "Auftrag Claude Code.md") umgesetzt.
+Migration 0007 und die Server-Funktionen sind im Projekt eingespielt. Geprüft: Typprüfung, Bundles für iOS, Android
+und Web, 94 Datenbank-Prüfungen lokal, Klick-Test in der Web-Vorschau gegen einen lokalen Test-Server.
+**Kein EAS-Build, kein Upload, kein Update an Geräte.** Auf einem Gerät ist von 0.3.0 nichts getestet.
 
 ## Zugänge und Kennungen (ohne Passwörter)
 
@@ -34,64 +34,51 @@ sind für iOS und Android erfolgreich. Auf einem Gerät ist von 0.2.0 noch nicht
 - Android: Play Console, App `de.dogworker.huta`, interner Test
 - Auf einem neuen Rechner: Repo klonen, `npm install`, `.env` aus `.env.example` anlegen
   (Werte: `npx eas-cli env:list --environment preview`).
-- Dienstleister-Konto von Florian: `info@dogworker-dresden.de` (Passwort nur Florian bekannt, vorläufig und schwach, siehe Aufgaben).
+- Dienstleister-Konto von Florian: `info@dogworker-dresden.de` (Passwort nur Florian bekannt, vorläufig und schwach).
+
+## Daten im Projekt (echt, nicht löschen oder überschreiben)
+
+- Sechs Abholstationen in Dresden, dazu seit 26.11. "Huta (Halsbrücke)" als Start und Ziel.
+- 17 Hunde an vorläufigen Kunden mit Platzhalter-E-Mail (`...@huta.invalid`). Feste Tage und Stationen fehlen noch.
+- Aus dem alten Test übrig: Schließzeit "Weihnachtspause (Beispiel)", Konto `crawlerrobo@gmail.com`.
 
 ## Builds
 
 - Installiert sind noch die alten Test-Builds 0.1.0 (Commit `66ff3e0`) in TestFlight und im internen Play-Test.
-  Sie können **keine** Updates empfangen. Datenbank-Änderungen wirken auch dort.
-- Prüf-Builds 0.2.0 (Profil `kompiliertest`, nicht zum Verteilen, Karte und Navi ohne echte Schlüssel):
-  - iOS-Simulator `6de96a14-f62f-4762-8991-5df014895b08` (Commit `4c7a6a1`): **erfolgreich**. Zwei Fehlversuche davor
-    (Linker-Fehler). Lösung: GoogleMaps auf 11.3.0 festgelegt (`plugins/withGoogleMapsVersion.js`), dazu
-    `useFrameworks: dynamic` wie im Google-Beispiel.
-  - Android-APK `25f415e6-40ae-426f-8840-50d1686965eb` (Commit `ff932cc`): **erfolgreich**. Danach nur iOS-Einstellungen geändert.
-
-## Was in 0.2.0 neu ist
-
-- OTA-Updates (`expo-updates`, Kanäle `preview` und `production`, `runtimeVersion` = App-Version).
-- Navigation in der App (Google Navigation SDK, Beta, 0.19.1), Karte mit eigener Station für Kunden. iOS ab 17.
-- "Standort immer erlauben" für Dienstleister (Erklärung vor der Abfrage, Knopf unter "Mehr").
-- "Gleich bist du dran": eigener Ton, Android-Kanal `bald`, iPhone dringende Mitteilung (Migration 0006, angewendet).
-- Display bleibt während der Fahrt an, Querformat nur in der Navigation.
-- Bausteine ohne Funktion: Kamera, Fotos, Dokumente, PDF, Teilen, Live-Aktivität, Netz, SQLite, Animationen, Gesten,
-  SVG, Schriften, Datumsauswahl, Vibration, Dunkelmodus, Sentry, App-Links `dogworker-dresden.de/huta-app`.
-- Umgebungsvariablen liegen in Expo statt in `eas.json`. Datenschutztext um Karten, Navigation und Fehlerberichte ergänzt.
-
-Geprüft: Typprüfung, `expo-doctor` 20/20, Bundles für iOS, Android und Web bauen, erzeugte native Einstellungen,
-Migration 0006 mit zurückgerollten Testdaten (Kunde sieht nur eigene Station, ohne Anmeldung kein Zugriff).
-Nicht geprüft: Web-Vorschau im Browser, alles auf echten Geräten.
+  Sie **passen seit Migration 0007 nicht mehr zur Datenbank** und können keine Updates empfangen.
+- Prüf-Builds 0.2.0 vom 25.11. waren für iOS und Android erfolgreich. 0.3.0 wurde noch nie gebaut.
+  Neu dabei: `expo-video`, `expo-media-library` (Version deshalb erhöht).
+- `expo-doctor` meldet seit dem 26.11. neuere Patch-Versionen einiger Expo-Pakete. Bewusst nicht aktualisiert.
 
 ## Aufgaben für Claude
 
-1. Wenn Florian A (Google) und B (Firebase) aus `EINRICHTUNG.md` erledigt hat: mit `env:list` prüfen, Android-Build
-   (`preview`) starten, Florian beim iOS-Build begleiten, Upload.
-2. Auf Geräten testen (Liste unten). Danach Änderungswünsche von Florian per Update umsetzen.
-3. Später: Dateien für App-Links auf der Website, Live-Aktivität (braucht eigenen Versand vom Server), Foto-Funktionen.
-4. Optional: Zwei-Wochen-Übersicht für Dienstleister (Florian hat noch nicht geantwortet).
+1. Nach A und B: `env:list` prüfen, nach Florians Zustimmung Android-Build (`preview`), iOS-Build begleiten.
+2. Prüf-Build `kompiliertest` für 0.3.0 vor den echten Builds vorschlagen.
+3. Auf Geräten testen, Änderungswünsche umsetzen.
+4. Falls gewünscht: Videos auch auf Android verkleinern (zusätzlicher nativer Baustein).
+5. Später: Dateien für App-Links auf der Website, Live-Aktivität.
 
 ## Aufgaben für Florian
 
-- `EINRICHTUNG.md` A: Google-Schlüssel (Pflicht für den Build).
-- B: Firebase (Push auf Android). C: iPhone-Build mit Apple-Login. E: Sentry (jederzeit).
-- Eigenen **Mail-Zugang (SMTP)** für Huta in Supabase hinterlegen, danach das schwache Passwort ändern.
-- **Straße bestätigen:** "Jacobistraße 5" oder "Jakobistraße 5" (Kartendaten kennen nur "Jacobistraße").
-- **App-Name und App-Symbol** bestätigen (brauchen einen Build).
-- **Datenschutztext und Einwilligung** rechtlich prüfen lassen, Kontakt-E-Mail in `src/lib/legal.ts` ersetzen.
-- Echte Stationen und Kunden eintragen, wenn der Test vorbei ist (Beispieldaten sind erfunden).
+- `EINRICHTUNG.md` A bis C, F (Registrierung abschalten), G (Konten). E: Sentry (jederzeit).
+- Kundendaten nachtragen: E-Mail, "Kunde seit", feste Tage, Stationen. Passwort ändern.
+- Beispiel-Schließzeit löschen oder richtigstellen.
+- Adresse "Huta (Halsbrücke)" prüfen. Schreibweise "Jacobistraße" bestätigen.
+- Datenschutz und AGB liefern, Kontakt-E-Mail in `src/lib/legal.ts` ersetzen.
 - Entscheiden: Testroboter-Konto `crawlerrobo@gmail.com` löschen?
 
 ## Noch nicht auf einem echten Gerät getestet
 
-Navigation, Kundenkarte, Updates ohne Build, "Standort immer", Standort im Hintergrund und automatische Ankunft,
-Push auf dem Handy samt eigenem Ton, Öffnen der Karten-App, Anrufen und WhatsApp, kleine Bildschirme und große Schrift,
-Route mit echten Verkehrsdaten.
+Navigation ohne Ansagen und Streckenwechsel, Kundenkarte, Standort im Hintergrund, Push samt eigenem Ton,
+Datumsauswahl, Fotos und Videos (hochladen, abspielen, speichern), Vertragsdateien, Live-Aktualisierung,
+Updates ohne Build, "Standort immer", große Schrift, kleine Bildschirme, Route mit echten Verkehrsdaten.
 
 ## Entscheidungen
 
-- Zwei Apps, null Verbindung: Huta ist von der Millo-App komplett getrennt (siehe `CLAUDE.md`).
-- Kein Live-Standort für Kunden (bewusst, Datenschutz). Kunden sehen Countdown, Stopps, Uhrzeit und die eigene Station.
+- Zwei Apps, null Verbindung (siehe `CLAUDE.md`).
+- 26.11.: Kunden sehen während der Fahrt den Live-Standort (ersetzt "Kein Live-Standort für Kunden").
+- 26.11.: Automatische Ankunftserkennung entfällt, weiter nur mit dem Knopf (ersetzt 80 Meter, 45 Sekunden).
+- Alle weiteren Entscheidungen zum neuen Konzept: `UMSETZUNG.md`, Abschnitt 7.
 - 25.11.: "Standort immer" kommt mit in den Build. CarPlay, Android Auto, Bezahlen, Social-Login, Kontakte und Kalender nicht.
-- Daumen-Check öffnet 15 Minuten vor Ankunft. Wohnungs-Wunsch bis 20 Minuten vorher und nur für freigegebene Hunde.
-- Automatische Ankunft: 80 Meter, 45 Sekunden Verweildauer.
 - Dienstleister-Konten nur per SQL (`update public.profiles set role = 'provider' where email = ...`).
 - Testroboter-Konto `crawlerrobo@gmail.com` stammt von Google (Zugriffe von Google-Adressen am 24.11., nie eingeloggt).

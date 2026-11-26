@@ -1,73 +1,69 @@
 import { useState } from 'react';
-import { notify } from '@/lib/dialog';
 import { Image, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { Btn, Field, H1, Screen, T } from '@/components/ui';
-import { APP_NAME, colors } from '@/lib/theme';
+import { useAuth } from '@/lib/auth';
+import { notify } from '@/lib/dialog';
 import { supabase } from '@/lib/supabase';
+import { APP_NAME, useTheme } from '@/lib/theme';
 
 export default function Login() {
   const router = useRouter();
-  const [mode, setMode] = useState<'login' | 'register' | 'reset'>('login');
+  const { session } = useAuth();
+  const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
+
+  if (session) return <Redirect href="/" />;
 
   async function submit() {
     setBusy(true);
-    try {
-      const mail = email.trim().toLowerCase();
-      if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email: mail, password });
-        if (error) throw error;
-        router.replace('/');
-      } else if (mode === 'register') {
-        const { data, error } = await supabase.auth.signUp({ email: mail, password, options: { data: { name } } });
-        if (error) throw error;
-        if (!data.session) {
-          notify('Fast geschafft', 'Bitte bestätige deine E-Mail-Adresse über den Link in der Nachricht, die wir dir geschickt haben.');
-          setMode('login');
-        } else router.replace('/');
-      } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(mail);
-        if (error) throw error;
-        notify('Gesendet', 'Du bekommst eine E-Mail zum Zurücksetzen des Passworts.');
-        setMode('login');
-      }
-    } catch (e) {
-      notify('Das hat nicht geklappt', e instanceof Error ? e.message : 'Unbekannter Fehler');
-    } finally {
-      setBusy(false);
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+    setBusy(false);
+    if (error) {
+      return notify(
+        'Anmeldung nicht möglich',
+        error.code === 'invalid_credentials' ? 'E-Mail oder Passwort stimmen nicht.' : 'Bitte Verbindung prüfen und noch einmal versuchen.',
+      );
     }
+    router.replace('/');
   }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
       <Screen>
-        <View style={{ alignItems: 'center', gap: 8, marginVertical: 16 }}>
-          <Image source={require('../../assets/icon.png')} style={{ width: 110, height: 110 }} />
+        <View style={{ alignItems: 'center', gap: 10, marginVertical: 20 }}>
+          <Image source={require('../../assets/icon.png')} style={{ width: 104, height: 104, borderRadius: 24 }} accessibilityIgnoresInvertColors />
           <H1>{APP_NAME}</H1>
-          <T muted>Hundetagesstätte Dogworker Dresden</T>
-        </View>
-        {mode === 'register' && <Field label="Name" value={name} onChangeText={setName} autoCapitalize="words" />}
-        <Field label="E-Mail" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-        {mode !== 'reset' && <Field label="Passwort" value={password} onChangeText={setPassword} secureTextEntry />}
-        <Btn
-          title={mode === 'login' ? 'Anmelden' : mode === 'register' ? 'Konto anlegen' : 'Link senden'}
-          onPress={submit}
-          busy={busy}
-          disabled={!email || (mode !== 'reset' && password.length < 6)}
-        />
-        {mode === 'login' && <Btn kind="ghost" title="Neu hier? Konto anlegen" onPress={() => setMode('register')} />}
-        {mode === 'login' && <Btn kind="ghost" title="Passwort vergessen" onPress={() => setMode('reset')} />}
-        {mode !== 'login' && <Btn kind="ghost" title="Zurück zur Anmeldung" onPress={() => setMode('login')} />}
-        {mode === 'register' && (
-          <T small muted>
-            Bitte nutze die E-Mail-Adresse, die du bei Dogworker angegeben hast. So wird dein Hund automatisch verknüpft.
+          <T muted center>
+            Hundetagesstätte Dogworker Dresden
           </T>
-        )}
+        </View>
+        <Field
+          label="E-Mail"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          textContentType="username"
+        />
+        <Field
+          label="Passwort"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          textContentType="password"
+          onSubmitEditing={() => email && password && submit()}
+        />
+        <Btn title="Anmelden" onPress={submit} busy={busy} disabled={!email || !password} />
+        <T small muted center>
+          Deinen Zugang bekommst du von der Hundetagesstätte. Beim ersten Mal meldest du dich mit dem Einmalpasswort an. Passwort
+          vergessen? Melde dich bei uns, du bekommst ein neues.
+        </T>
       </Screen>
     </SafeAreaView>
   );

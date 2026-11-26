@@ -7,7 +7,7 @@ import { confirmDialog } from './dialog';
 const ASKED_KEY = 'huta:askedAlways';
 
 const EXPLANATION =
-  'Huta erfasst deinen Standort während einer Fahrt, auch wenn die App geschlossen ist oder nicht benutzt wird, zum Beispiel bei gesperrtem Handy. So sehen die Kunden die Ankunftszeiten. Außerhalb einer Fahrt wird nichts übertragen. Wähle im nächsten Schritt "Immer erlauben".';
+  'Huta erfasst deinen Standort während einer Fahrt, auch wenn die App geschlossen ist oder nicht benutzt wird, zum Beispiel bei gesperrtem Handy. So sehen die Kunden dieser Fahrt den Standort des Fahrzeugs und die Ankunftszeiten. Außerhalb einer Fahrt wird nichts übertragen. Wähle im nächsten Schritt "Immer erlauben".';
 
 export type AlwaysState = 'granted' | 'missing' | 'unavailable';
 

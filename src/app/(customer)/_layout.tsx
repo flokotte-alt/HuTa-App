@@ -1,45 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Redirect, Tabs } from 'expo-router';
 import { Spinner } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { registerPush } from '@/lib/push';
-import { supabase } from '@/lib/supabase';
-import { colors } from '@/lib/theme';
+import { tabOptions, tabIcon } from '@/lib/tabs';
+import { useTheme } from '@/lib/theme';
 
 export default function CustomerLayout() {
-  const { session, profile, loading } = useAuth();
-  const [consent, setConsent] = useState<'unknown' | 'yes' | 'no'>('unknown');
+  const { session, profile, consent, loading } = useAuth();
+  const { colors } = useTheme();
+  const ready = profile?.role === 'customer' && !profile.must_change_password && consent;
 
   useEffect(() => {
-    if (!session) return;
-    supabase
-      .from('consents')
-      .select('user_id')
-      .maybeSingle()
-      .then(({ data }) => {
-        setConsent(data ? 'yes' : 'no');
-        if (data) registerPush(false); // Token still erneuern, wenn schon erlaubt
-      });
-  }, [session]);
+    if (ready) registerPush(false); // Token still erneuern, wenn schon erlaubt
+  }, [ready]);
 
-  if (loading || (session && !profile)) return <Spinner />;
-  if (!session) return <Redirect href="/login" />;
-  if (profile?.role === 'provider') return <Redirect href="/(provider)/today" />;
-  if (consent === 'unknown') return <Spinner />;
-  if (consent === 'no') return <Redirect href="/consent" />;
+  if (loading) return <Spinner />;
+  // Anmeldung, eigenes Passwort und Datenschutz regelt die Startweiche
+  if (!session || !ready) return <Redirect href="/" />;
   return (
-    <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.dark },
-        headerTintColor: '#fff',
-        tabBarActiveTintColor: colors.primary,
-        tabBarLabelStyle: { fontSize: 14, fontWeight: '700' },
-        tabBarIconStyle: { display: 'none' },
-        tabBarStyle: { height: 56 },
-      }}
-    >
-      <Tabs.Screen name="home" options={{ title: 'Start', tabBarLabel: 'Start' }} />
-      <Tabs.Screen name="account" options={{ title: 'Mein Hund', tabBarLabel: 'Mein Hund' }} />
+    <Tabs screenOptions={tabOptions(colors)}>
+      <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: tabIcon('home') }} />
+      <Tabs.Screen name="album" options={{ title: 'Album', tabBarIcon: tabIcon('images') }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: tabIcon('person') }} />
     </Tabs>
   );
 }

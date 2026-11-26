@@ -1,40 +1,35 @@
 # Huta (Arbeitstitel)
 
-Abhol-App für die Hundetagesstätte Dogworker Dresden. Diese App ist eigenständig: eigenes Repo, eigenes
+App für die Hundetagesstätte Dogworker Dresden. Diese App ist eigenständig: eigenes Repo, eigenes
 Supabase-Projekt, eigene App-Kennung (`de.dogworker.huta`).
 
 ## Was die App kann
 
-**Dienstleister**
-- Verwaltung: Kunden, Hunde (feste Tage, Wohnungs-Knopf), Stationen (mit Koordinaten-Suche), Regeln für morgens und nachmittags.
-- Wochenplan: aus festen Tagen füllen, Status ändern, Station und Übergabe nur für einen Tag ändern, veröffentlichen (mit Push).
-  Urlaub der Kunden und Schließzeiten werden zur Information angezeigt.
-- Dienstplan (wer fährt), Schließzeiten, eigene Telefonnummer, Zusatzzeit für Wohnungs-Übergabe.
-- Fahrt: Startpunkt wählen, Route mit Verkehrsdaten (sobald der Google-Schlüssel eingetragen ist, sonst Schätzung),
-  Reihenfolge ändern, Start-Knopf, Standort wird geteilt (auch im Hintergrund, "Standort immer erlauben"),
-  Navigation in der App (oder in der Karten-App), Display bleibt an, Stopp-Leiste mit Daumen-Status,
-  "Nächster Stopp" und automatische Erkennung der Ankunft, Wohnungs-Wünsche übernehmen, Nachzügler erinnern, Fahrt beenden.
+**Dienstleister** (Tabs Home, Kunden, Album, Einstellungen)
+- Home: Tagesliste (Morgenfahrt und Nachmittagsfahrt), darunter die Wochentabelle. Sie füllt sich aus den festen
+  Tagen, eingetragen werden nur Ausnahmen: verschieben, stornieren, absagen, Station und Übergabe für einen Tag.
+  Änderungen sind Entwürfe, bis "Veröffentlichen" gedrückt wird.
+- Kunden: Stammdaten, "Kunde seit", Zugang mit Einmalpasswort, Vertragsdateien, Hunde mit festen Regeln,
+  Schlüssel und Wohnungs-Puffer.
+- Album: Fotos und Videos hochladen und löschen.
+- Einstellungen: Urlaubsübersicht, Schließzeiten, Stationen (Start und Ziel), Standardwerte, Dunkelmodus, Konto.
+- Fahrt: Route vorschlagen (mit Verkehrsdaten, sobald der Google-Schlüssel eingetragen ist, sonst Näherung),
+  Reihenfolge anpassen, Navigation ohne Ansagen im selben Bildschirm, Strecke wird laufend geprüft,
+  großer Knopf für den nächsten Stopp.
 
-**Kunden**
-- Wochenliste (nur Hundenamen), eigene Regeln, Schließzeiten, Urlaub eintragen.
-- Während der Fahrt: Countdown (Stopps, Minuten, Uhrzeit), Karte mit der eigenen Station, Daumen-Check, Krankmeldung,
-  Wohnungs-Wunsch, Anrufen und WhatsApp.
-- Einwilligung beim ersten Start, Datenschutzseite, Konto und Daten löschen.
+**Kunden** (Tabs Home, Album, Profil)
+- Live-Banner mit Countdown, Karte, Wohnungs-Button (wenn freigeschaltet) und Bestätigung.
+- Hinweis auf Schließzeiten, Wochenliste (nur lesen, nur Veröffentlichtes, eigene Hunde hervorgehoben).
+- Album ansehen, speichern, mit Emojis reagieren.
+- Urlaub eintragen, Passwort ändern, Dunkelmodus.
 
-**Push-Nachrichten:** Fahrt gestartet, "Gleich bist du dran" 15 Minuten vorher (eigener Ton, auf dem iPhone als dringende
-Mitteilung), neue Zeit bei mehr als 10 Minuten Verschiebung, Wochenplan veröffentlicht oder geändert, Krankmeldung und
-Wohnungs-Wunsch an die Dienstleister, Erinnerung an Nachzügler.
-
-## Im Build vorbereitet, Funktion folgt später per Update
-
-Kamera, Fotos und Code-Scan, Dokumente, PDF und Teilen, Countdown auf dem iPhone-Sperrbildschirm (Live-Aktivität),
-Netz-Erkennung und lokale Datenbank, Animationen, Gesten, Symbole, Schriften, Datumsauswahl, Vibration, Dunkelmodus,
-Fehlerberichte (aktiv sobald die Sentry-DSN hinterlegt ist), Links von der Website in die App.
+**Push-Nachrichten** (vom Server): etwa 15 Minuten vor Ankunft an alle, die zur Station kommen, und 5 Minuten vorher
+dringend an alle, die noch nicht bestätigt haben. Zeiten und eine zusätzliche Start-Nachricht sind einstellbar.
 
 ## Noch nicht enthalten
 
-- Karte mit Live-Standort für Kunden (bewusst nicht Teil der ersten Version, später ohne neuen Build möglich).
-- CarPlay und Android Auto, Bezahlen, Google- oder Apple-Login.
+CarPlay und Android Auto, Bezahlen, Google- oder Apple-Login, Anfragen oder Krankmeldungen (laufen über WhatsApp),
+endgültige Datenschutzerklärung und AGB.
 
 ## Updates und Builds
 
@@ -58,16 +53,22 @@ npx.cmd eas-cli build --platform ios --profile preview
 
 Prüf-Build ohne echte Schlüssel (nur ob alles zusammenbaut): `--profile kompiliertest`.
 
-## Datenbank
+## Datenbank und Server
 
-Schema in `supabase/migrations`, Beispieldaten in `supabase/seed.sql` (erfundene Kunden und Hunde, sechs Stationen),
-Routenberechnung in `supabase/functions/plan-route`.
+- Schema in `supabase/migrations`. `supabase/seed.sql` ist nur für eine leere Datenbank (erfundene Daten).
+- `supabase/functions`: `plan-route` (Routen), `customer-account` (Kundenzugänge, nur Dienstleister),
+  `album-cleanup` (löscht abgelaufene Album-Dateien, läuft nachts, prüft ein Geheimnis aus der Datenbank).
+- Wochenplan: `week_entries` enthält nur Ausnahmen, je Hund und Tag eine veröffentlichte Zeile und höchstens
+  einen Entwurf. Gelesen wird über die Funktionen `plan_rows` (Dienstleister) und `customer_week` (Kunden).
 
-Dienstleister-Konten werden **serverseitig** freigeschaltet. Nach der Registrierung in der App:
+Dienstleister-Konten werden **serverseitig** freigeschaltet:
 
 ```sql
 update public.profiles set role = 'provider' where email = 'name@beispiel.de';
 ```
 
-Kunden werden vorher vom Dienstleister mit E-Mail angelegt. Registriert sich der Kunde mit dieser E-Mail,
-wird sein Konto automatisch mit den Hunden verknüpft.
+Kundenkonten legt ein Dienstleister in der App an (Kunden, Kunde öffnen, Zugang anlegen).
+
+## Logo
+
+`node assets-src/make-icons.js` erzeugt Logo und App-Symbole neu.

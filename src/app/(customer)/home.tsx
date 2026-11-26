@@ -1,226 +1,268 @@
-import { useCallback, useEffect, useState } from 'react';
-import { confirmDialog, notify } from '@/lib/dialog';
-import { AppState, Linking, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { Btn, Card, H2, Row, Screen, T } from '@/components/ui';
-import { StationMap } from '@/components/StationMap';
+// Home der Kunden: oben die laufende Fahrt, dann Schliesszeiten, darunter die Wochenliste (nur lesen)
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { PanResponder, View } from 'react-native';
+import { CustomerMap } from '@/components/CustomerMap';
+import { Badge, Btn, Card, Grow, H2, IconBtn, Row, Screen, Spinner, T } from '@/components/ui';
+import { addDays, currentWeekMonday, dayLabel, iso, parseIso, rangeLabel, shortDate, timeLabel } from '@/lib/dates';
+import { notify } from '@/lib/dialog';
+import { useLive } from '@/lib/live';
 import { supabase } from '@/lib/supabase';
-import { STATUS_COLOR, STATUS_LABEL, colors } from '@/lib/theme';
-import { addDays, dayLabel, iso, mondayOf, parseIso, timeLabel } from '@/lib/dates';
+import { useTheme } from '@/lib/theme';
 
 type TripRow = {
   trip_dog_id: string;
-  dog_id: string;
+  stop_id: string;
   dog_name: string;
   direction: 'morning' | 'afternoon';
   stops_before: number;
   eta: string;
+  handover: 'station' | 'apartment';
   thumb_at: string | null;
   thumb_open: boolean;
-  apartment_allowed: boolean;
   apartment_open: boolean;
   apartment_requested: boolean;
-  handover: 'station' | 'apartment';
-  sick: boolean;
   arrived: boolean;
-  driver_name: string | null;
+  station_label: string;
+  lat: number;
+  lng: number;
+  vehicle_lat: number | null;
+  vehicle_lng: number | null;
 };
-type WeekRow = { day: string; dog_name: string; status: string };
-type Dog = { id: string; name: string };
-type Contact = { name: string; phone: string | null };
-type MapRow = { trip_dog_id: string; station_label: string; lat: number; lng: number };
+type WeekRow = { day: string; dog_name: string; own: boolean; status: 'registered' | 'cancelled_billed' };
+type Closure = { id: string; date_from: string; date_to: string; note: string | null };
+
+const WEEKS_AHEAD = 1; // diese Woche und eine weiter (in der Datenbank genauso begrenzt)
+
+const names = (rows: TripRow[]) => rows.map((r) => r.dog_name).join(' und ');
 
 export default function CustomerHome() {
   const [trips, setTrips] = useState<TripRow[]>([]);
-  const [week, setWeek] = useState<WeekRow[]>([]);
-  const [myDogs, setMyDogs] = useState<Dog[]>([]);
-  const [contact, setContact] = useState<Contact | null>(null);
-  const [places, setPlaces] = useState<MapRow[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [now, setNow] = useState(Date.now());
+  const [offset, setOffset] = useState(0);
+  const [week, setWeek] = useState<{ monday: string; rows: WeekRow[] } | null>(null);
+  const [closures, setClosures] = useState<Closure[]>([]);
+  const [dogs, setDogs] = useState<number | null>(null);
+  const monday = iso(addDays(currentWeekMonday(), offset * 7));
 
   const load = useCallback(async () => {
-    const from = mondayOf(new Date());
-    const [t, w, d, c, m] = await Promise.all([
+    const [t, w, c, d] = await Promise.all([
       supabase.rpc('my_trip_status'),
-      supabase.rpc('week_names', { p_from: iso(from), p_to: iso(addDays(from, 13)) }),
-      supabase.from('dogs').select('id, name'),
-      supabase.rpc('todays_contact', {}),
-      supabase.rpc('my_trip_map'),
+      supabase.rpc('customer_week', { p_monday: monday }),
+      supabase.from('closures').select('*').gte('date_to', iso(new Date())).lte('date_from', iso(addDays(new Date(), 28))).order('date_from'),
+      supabase.rpc('my_dogs'),
     ]);
-    setPlaces((m.data as MapRow[]) ?? []);
-    setTrips((t.data as TripRow[]) ?? []);
-    setWeek((w.data as WeekRow[]) ?? []);
-    setMyDogs((d.data as Dog[]) ?? []);
-    setContact(((c.data as Contact[]) ?? [])[0] ?? null);
-  }, []);
+    if (!t.error) setTrips((t.data as TripRow[]) ?? []);
+    if (!w.error) setWeek({ monday, rows: (w.data as WeekRow[]) ?? [] });
+    if (!c.error) setClosures((c.data as Closure[]) ?? []);
+    if (!d.error) setDogs(((d.data as unknown[]) ?? []).length);
+  }, [monday]);
 
-  useFocusEffect(
-    useCallback(() => {
-      load();
-      const t = setInterval(load, 15000);
-      return () => clearInterval(t);
-    }, [load]),
-  );
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 20000);
-    const sub = AppState.addEventListener('change', (st) => {
-      if (st === 'active') load();
-    });
-    return () => {
-      clearInterval(t);
-      sub.remove();
-    };
-  }, [load]);
+  const live = useLive(load, ['app_settings', 'trip_location'], 15000);
 
-  async function run(label: string, fn: () => PromiseLike<{ error: { message: string } | null }>) {
-    const { error } = await fn();
-    if (error) notify(label, error.message);
-    load();
-  }
+  // Wischen blaettert die Woche
+  const swipe = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 24 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderRelease: (_e, g) => {
+        if (g.dx < -50) setOffset((o) => Math.min(WEEKS_AHEAD, o + 1));
+        if (g.dx > 50) setOffset((o) => Math.max(0, o - 1));
+      },
+    }),
+  ).current;
 
-  const mine = new Set(myDogs.map((d) => d.name));
-  const todayIso = iso(new Date());
-  const days = Array.from(new Set(week.map((w) => w.day))).filter((d) => d >= todayIso).sort();
-  const weekBlock = (
-    <>
-      <H2>Wochenliste</H2>
-      {days.length === 0 && <T muted>Noch keine Woche veröffentlicht.</T>}
-      {days.map((d) => (
-        <Card key={d}>
-          <T bold>{dayLabel(parseIso(d))}</T>
-          <Row wrap>
-            {week
-              .filter((w) => w.day === d)
-              .map((w, i) => (
-                <T
-                  key={i}
-                  bold={mine.has(w.dog_name)}
-                  color={STATUS_COLOR[w.status] ?? colors.dark}
-                  small
-                >
-                  {w.dog_name}
-                  {w.status !== 'registered' ? ` (${STATUS_LABEL[w.status]})` : ''}
-                </T>
-              ))}
-          </Row>
-        </Card>
-      ))}
-    </>
-  );
+  const stops = Array.from(new Set(trips.map((t) => t.stop_id))).map((id) => trips.filter((t) => t.stop_id === id));
+  const days = Array.from({ length: 5 }, (_, i) => iso(addDays(parseIso(monday), i)));
 
   return (
-    <Screen
-      onRefresh={async () => {
-        setRefreshing(true);
-        await load();
-        setRefreshing(false);
-      }}
-      refreshing={refreshing}
-    >
-      {trips.map((t) => {
-        const minutes = Math.max(0, Math.round((new Date(t.eta).getTime() - now) / 60000));
-        const place = places.find((p) => p.trip_dog_id === t.trip_dog_id);
-        return (
-          <Card key={t.trip_dog_id} style={{ borderColor: colors.primary, borderWidth: 2 }}>
-            <T bold color={colors.primary}>
-              {t.direction === 'morning' ? 'Abholung' : 'Rückfahrt'} läuft · {t.dog_name}
-            </T>
-            {t.sick ? (
-              <T>{t.dog_name} ist krank gemeldet und wird nicht abgeholt.</T>
-            ) : t.arrived ? (
-              <T bold>Station ist erledigt.</T>
-            ) : (
-              <>
-                <T bold>
-                  {t.stops_before === 0 ? 'Du bist als Nächstes dran' : `Noch ${t.stops_before} Stopp${t.stops_before === 1 ? '' : 's'} vor dir`}
-                </T>
-                <T>
-                  Ankunft in ca. {minutes} Min · {timeLabel(t.eta)} Uhr
-                </T>
-              </>
-            )}
-            {!t.sick && !t.arrived && place && t.handover === 'station' && (
-              <>
-                <T small muted>
-                  Deine Station: {place.station_label}
-                </T>
-                <StationMap lat={place.lat} lng={place.lng} label={place.station_label} />
-              </>
-            )}
-            {!t.sick && !t.arrived && (
-              <View style={{ gap: 8, marginTop: 4 }}>
-                {t.thumb_at ? (
-                  <T bold color={colors.green}>
-                    Daumen bestätigt
-                  </T>
-                ) : (
-                  <Btn
-                    title={t.thumb_open ? 'Daumen hoch: Ich bin bereit' : 'Daumen (kurz vor Ankunft)'}
-                    disabled={!t.thumb_open}
-                    onPress={() => run('Daumen', () => supabase.rpc('customer_thumb', { p_trip_dog: t.trip_dog_id }))}
-                  />
-                )}
-                {t.handover === 'apartment' && <T small muted>Übergabe in der Wohnung.</T>}
-                {t.apartment_allowed && t.handover !== 'apartment' && (
-                  <Btn
-                    kind="dark"
-                    title={
-                      t.apartment_requested
-                        ? 'Wohnungs-Wunsch gesendet'
-                        : t.apartment_open
-                          ? 'Bitte in die Wohnung bringen oder holen'
-                          : 'Wohnungs-Wunsch nicht mehr möglich'
-                    }
-                    disabled={!t.apartment_open}
-                    onPress={() => run('Wohnung', () => supabase.rpc('customer_apartment', { p_trip_dog: t.trip_dog_id }))}
-                  />
-                )}
-                {t.apartment_allowed && t.handover !== 'apartment' && !t.apartment_open && !t.apartment_requested && (
-                  <T small muted>
-                    Bitte melde den Wunsch jetzt per WhatsApp.
-                  </T>
-                )}
-                <Btn
-                  kind="danger"
-                  title="Hund ist krank, bitte nicht abholen"
-                  onPress={() =>
-                    confirmDialog(`${t.dog_name} krank melden?`, 'Der Hund wird für heute abgemeldet.', 'Krank melden', () =>
-                      run('Krankmeldung', () => supabase.rpc('customer_sick', { p_dog: t.dog_id })),
-                    true)
-                  }
-                />
-              </View>
-            )}
-          </Card>
-        );
-      })}
+    <Screen safeTop onRefresh={live.onRefresh} refreshing={live.refreshing}>
+      {stops.map((rows) => (
+        <LiveBanner key={rows[0].stop_id} rows={rows} reload={load} />
+      ))}
 
-      {contact && (
+      {closures.map((c) => (
+        <ClosureNotice key={c.id} closure={c} />
+      ))}
+
+      {dogs === 0 && (
         <Card>
-          <T bold>Heute fährt: {contact.name}</T>
-          {contact.phone ? (
-            <Row>
-              <View style={{ flex: 1 }}>
-                <Btn title="Anrufen" kind="dark" onPress={() => Linking.openURL(`tel:${contact.phone!.replace(/\s/g, '')}`)} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Btn
-                  title="WhatsApp"
-                  kind="dark"
-                  onPress={() => Linking.openURL(`https://wa.me/${contact.phone!.replace(/[^0-9]/g, '').replace(/^0/, '49')}`)}
-                />
-              </View>
-            </Row>
-          ) : (
-            <T muted small>
-              Keine Nummer hinterlegt.
-            </T>
-          )}
+          <T>Deinem Konto ist noch kein Hund zugeordnet. Bitte melde dich bei Dogworker.</T>
         </Card>
       )}
 
-      {weekBlock}
+      <H2>Wochenliste</H2>
+      <View {...swipe.panHandlers} style={{ gap: 10 }}>
+        <Row>
+          <IconBtn icon="chevron-back" label="Diese Woche" onPress={() => setOffset(offset - 1)} disabled={offset === 0} />
+          <Grow>
+            <T bold center>
+              {offset === 0 ? 'Diese Woche' : 'Nächste Woche'}
+            </T>
+            <T small muted center>
+              {shortDate(parseIso(days[0]))} bis {shortDate(parseIso(days[4]))}
+            </T>
+          </Grow>
+          <IconBtn icon="chevron-forward" label="Eine Woche weiter" onPress={() => setOffset(offset + 1)} disabled={offset === WEEKS_AHEAD} />
+        </Row>
+        {week?.monday !== monday ? (
+          <View style={{ height: 160 }}>
+            <Spinner />
+          </View>
+        ) : (
+          days.map((day) => (
+            <DayCard
+              key={day}
+              day={day}
+              rows={week.rows.filter((r) => r.day === day)}
+              closed={closures.find((c) => c.date_from <= day && c.date_to >= day)}
+            />
+          ))
+        )}
+      </View>
     </Screen>
+  );
+}
+
+function DayCard({ day, rows, closed }: { day: string; rows: WeekRow[]; closed?: Closure }) {
+  const { colors } = useTheme();
+  const today = day === iso(new Date());
+  return (
+    <Card style={today ? { borderColor: colors.primary } : undefined}>
+      <T bold>
+        {dayLabel(parseIso(day))}
+        {today ? ', heute' : ''}
+      </T>
+      {rows.length === 0 && <T muted>{closed ? 'Geschlossen' : 'Kein Eintrag'}</T>}
+      <Row wrap>
+        {rows.map((r) => {
+          const cancelled = r.status === 'cancelled_billed';
+          return (
+            <View
+              key={r.dog_name + String(r.own)}
+              accessibilityLabel={`${r.dog_name}${r.own ? ', dein Hund' : ''}${cancelled ? ', abgesagt' : ''}`}
+              style={{
+                paddingHorizontal: r.own ? 10 : 2,
+                paddingVertical: 4,
+                borderRadius: 6,
+                backgroundColor: cancelled ? colors.cancelledBg : r.own ? colors.primary : 'transparent',
+              }}
+            >
+              <T small bold={r.own} color={cancelled ? colors.cancelledText : r.own ? colors.onPrimary : undefined}>
+                {r.dog_name}
+                {cancelled ? ' (abgesagt)' : ''}
+              </T>
+            </View>
+          );
+        })}
+      </Row>
+    </Card>
+  );
+}
+
+function ClosureNotice({ closure }: { closure: Closure }) {
+  const { colors } = useTheme();
+  return (
+    <View accessibilityRole="alert" style={{ backgroundColor: colors.primary, borderRadius: 12, padding: 14, gap: 4 }}>
+      <T bold color={colors.onPrimary}>
+        Wir haben geschlossen
+      </T>
+      <T color={colors.onPrimary}>
+        {rangeLabel(closure.date_from, closure.date_to)}
+        {closure.note ? `, ${closure.note}` : ''}
+      </T>
+    </View>
+  );
+}
+
+function LiveBanner({ rows, reload }: { rows: TripRow[]; reload: () => Promise<void> }) {
+  const { colors } = useTheme();
+  const [now, setNow] = useState(Date.now());
+  const [busy, setBusy] = useState('');
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(t);
+  }, []);
+
+  const first = rows[0];
+  const morning = first.direction === 'morning';
+  const toDoor = rows.filter((r) => r.handover === 'apartment');
+  const atStation = rows.filter((r) => r.handover === 'station');
+  const arrived = rows.every((r) => r.arrived);
+  const minutes = Math.max(1, Math.round((new Date(first.eta).getTime() - now) / 60000));
+  const apartment = rows.find((r) => r.apartment_open);
+  const toConfirm = atStation.find((r) => r.thumb_open);
+  const confirmed = atStation.length > 0 && atStation.every((r) => r.thumb_at);
+  const n = first.stops_before + 1;
+
+  async function call(name: 'customer_thumb' | 'customer_apartment', id: string) {
+    setBusy(name);
+    const { error } = await supabase.rpc(name, { p_trip_dog: id });
+    if (error) notify('Nicht möglich', error.message);
+    await reload();
+    setBusy('');
+  }
+
+  return (
+    <Card style={{ borderColor: colors.primary, borderWidth: 2, gap: 10 }}>
+      <Row>
+        <Grow>
+          <T bold color={colors.primary}>
+            {morning ? 'Abholung' : 'Rückfahrt'} läuft: {names(rows)}
+          </T>
+        </Grow>
+        <Badge text="live" background={colors.primary} color={colors.onPrimary} />
+      </Row>
+      {arrived ? (
+        <H2>Erledigt, bis bald</H2>
+      ) : (
+        <>
+          <H2>{first.stops_before === 0 ? 'Du bist als Nächstes dran' : `In ${n} Stopps sind wir bei dir`}</H2>
+          <T bold>
+            ca. {minutes} {minutes === 1 ? 'Minute' : 'Minuten'}, Ankunft gegen {timeLabel(first.eta)} Uhr
+          </T>
+          {toDoor.length > 0 && (
+            <T>
+              {morning ? 'Wir holen' : 'Wir bringen'} {names(toDoor)} {morning ? 'in der Wohnung ab.' : 'in die Wohnung.'}
+              {toDoor.some((r) => r.apartment_requested) ? ' Dein Wunsch ist angekommen.' : ''}
+            </T>
+          )}
+          {apartment && (
+            <Btn
+              kind="secondary"
+              icon="home-outline"
+              title={morning ? 'Bitte in der Wohnung abholen' : 'Bitte in die Wohnung bringen'}
+              busy={busy === 'customer_apartment'}
+              onPress={() => call('customer_apartment', apartment.trip_dog_id)}
+            />
+          )}
+          {toConfirm ? (
+            <Btn
+              big
+              icon="thumbs-up"
+              title="Bestätigen"
+              busy={busy === 'customer_thumb'}
+              onPress={() => call('customer_thumb', toConfirm.trip_dog_id)}
+            />
+          ) : confirmed ? (
+            <T bold color={colors.primary}>
+              Bestätigt, danke.
+            </T>
+          ) : atStation.length > 0 ? (
+            <T small muted>
+              Kurz vor der Ankunft bitten wir dich um eine Bestätigung.
+            </T>
+          ) : null}
+          {atStation.length > 0 && (
+            <>
+              <T small muted>
+                Treffpunkt: {first.station_label}
+              </T>
+              <CustomerMap
+                station={{ lat: first.lat, lng: first.lng, label: first.station_label }}
+                vehicle={first.vehicle_lat != null ? { lat: first.vehicle_lat, lng: first.vehicle_lng! } : null}
+              />
+            </>
+          )}
+        </>
+      )}
+    </Card>
   );
 }

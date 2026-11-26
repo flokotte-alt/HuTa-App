@@ -2,12 +2,14 @@
   "expo": {
     "name": "Huta",
     "slug": "huta",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "huta",
     "userInterfaceStyle": "automatic",
-    "runtimeVersion": { "policy": "appVersion" },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "updates": {
       "url": "https://u.expo.dev/be64770f-2a68-467c-a3b8-abe8562e7164",
       "checkAutomatically": "ON_LOAD",
@@ -20,17 +22,22 @@
       "supportsTablet": false,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["location", "audio"]
+        "UIBackgroundModes": [
+          "location",
+          "audio"
+        ]
       },
       "entitlements": {
         "com.apple.developer.usernotifications.time-sensitive": true
       },
-      "associatedDomains": ["applinks:dogworker-dresden.de"]
+      "associatedDomains": [
+        "applinks:dogworker-dresden.de"
+      ]
     },
     "android": {
       "package": "de.dogworker.huta",
       "adaptiveIcon": {
-        "backgroundColor": "#2c2c2c",
+        "backgroundColor": "#2B5A4B",
         "foregroundImage": "./assets/adaptive-icon.png"
       },
       "permissions": [
@@ -41,13 +48,28 @@
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "blockedPermissions": ["android.permission.RECORD_AUDIO"],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "dogworker-dresden.de", "pathPrefix": "/huta-app" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "https",
+              "host": "dogworker-dresden.de",
+              "pathPrefix": "/huta-app"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -56,7 +78,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#2c2c2c",
+          "backgroundColor": "#2B5A4B",
           "image": "./assets/splash-icon.png",
           "imageWidth": 160
         }
@@ -64,9 +86,9 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Huta nutzt deinen Standort für die Navigation und während einer Fahrt, damit Kunden die Ankunftszeit sehen.",
-          "locationAlwaysAndWhenInUsePermission": "Huta erfasst während einer Fahrt den Standort des Fahrers, auch wenn das Handy gesperrt ist oder die App im Hintergrund läuft, damit Kunden die Ankunftszeit sehen.",
-          "locationAlwaysPermission": "Huta erfasst während einer Fahrt den Standort des Fahrers, auch wenn das Handy gesperrt ist oder die App im Hintergrund läuft, damit Kunden die Ankunftszeit sehen.",
+          "locationWhenInUsePermission": "Huta nutzt deinen Standort für die Navigation und während einer Fahrt, damit die Kunden der Fahrt den Standort des Fahrzeugs und die Ankunftszeit sehen.",
+          "locationAlwaysAndWhenInUsePermission": "Huta erfasst während einer Fahrt den Standort des Fahrers, auch wenn das Handy gesperrt ist oder die App im Hintergrund läuft, damit die Kunden der Fahrt den Standort des Fahrzeugs und die Ankunftszeit sehen.",
+          "locationAlwaysPermission": "Huta erfasst während einer Fahrt den Standort des Fahrers, auch wenn das Handy gesperrt ist oder die App im Hintergrund läuft, damit die Kunden der Fahrt den Standort des Fahrzeugs und die Ankunftszeit sehen.",
           "motionUsagePermission": "Huta nutzt Bewegungsdaten, damit die Navigation während der Fahrt genauer ist.",
           "locationFullAccuracyPermission": false,
           "isAndroidBackgroundLocationEnabled": true,
@@ -78,15 +100,22 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#eb6a0e",
-          "sounds": ["./assets/sounds/huta_bald.wav"]
+          "color": "#2B5A4B",
+          "sounds": [
+            "./assets/sounds/huta_bald.wav"
+          ]
         }
       ],
       [
         "expo-build-properties",
         {
-          "android": { "kotlinVersion": "2.3.21" },
-          "ios": { "deploymentTarget": "17.0", "useFrameworks": "dynamic" }
+          "android": {
+            "kotlinVersion": "2.3.21"
+          },
+          "ios": {
+            "deploymentTarget": "17.0",
+            "useFrameworks": "dynamic"
+          }
         }
       ],
       "@googlemaps/react-native-navigation-sdk",
@@ -102,7 +131,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Huta greift auf deine Fotos zu, wenn du ein Bild auswählst.",
+          "photosPermission": "Huta greift auf deine Fotos zu, wenn du Fotos oder Videos für das Album auswählst.",
           "cameraPermission": "Huta nutzt die Kamera, wenn du ein Foto aufnimmst oder einen Code scannst.",
           "microphonePermission": false
         }
@@ -117,13 +146,27 @@
         }
       ],
       "expo-screen-orientation",
-      ["expo-secure-store", { "faceIDPermission": false }],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
       "expo-font",
       "expo-image",
       "@react-native-community/datetimepicker",
       "expo-sharing",
       "expo-sqlite",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-video",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Huta greift auf deine Fotos zu, wenn du Fotos oder Videos für das Album auswählst.",
+          "savePhotosPermission": "Huta speichert Fotos und Videos aus dem Album auf deinem Handy.",
+          "granularPermissions": []
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

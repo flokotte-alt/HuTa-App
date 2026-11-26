@@ -17,6 +17,8 @@ if (Platform.OS !== 'web') {
 
 export type PushState = 'granted' | 'denied' | 'unavailable';
 
+let currentToken: string | null = null;
+
 // ask = true: Berechtigung abfragen. ask = false: nur still erneuern, wenn schon erlaubt.
 export async function registerPush(ask: boolean): Promise<PushState> {
   if (Platform.OS === 'web' || !Device.isDevice) return 'unavailable';
@@ -25,9 +27,9 @@ export async function registerPush(ask: boolean): Promise<PushState> {
       name: 'Huta',
       importance: Notifications.AndroidImportance.HIGH,
     });
-    // "Gleich bist du dran" mit eigenem Ton
+    // Ankunfts-Nachrichten (Stufe 1 und 2) mit eigenem Ton
     await Notifications.setNotificationChannelAsync('bald', {
-      name: 'Gleich bist du dran',
+      name: 'Ankunft in Kürze',
       importance: Notifications.AndroidImportance.MAX,
       sound: 'huta_bald.wav',
       vibrationPattern: [0, 300, 200, 300],
@@ -39,9 +41,21 @@ export async function registerPush(ask: boolean): Promise<PushState> {
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   try {
     const token = (await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)).data;
+    currentToken = token;
     await supabase.rpc('save_push_token', { p_token: token });
     return 'granted';
   } catch {
     return 'unavailable';
   }
+}
+
+// Beim Abmelden: dieses Geraet bekommt keine Nachrichten mehr
+export async function removePushToken() {
+  if (!currentToken) return;
+  try {
+    await supabase.rpc('remove_push_token', { p_token: currentToken });
+  } catch {
+    /* ohne Netz: der Eintrag wird bei der naechsten Anmeldung ueberschrieben */
+  }
+  currentToken = null;
 }
