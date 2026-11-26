@@ -7,6 +7,13 @@ Zuletzt aktualisiert: 26.11.2026
 Das neue Konzept ist gebaut (Version 0.3.0). Bericht und alle Entscheidungen: **`UMSETZUNG.md`**.
 Befehle passend zum Rechner ausgeben.
 
+**26.11.: Florian wollte den iPhone-Build "erstmal so" in TestFlight. Nicht gebaut, nichts hochgeladen:** In Expo
+fehlt `GOOGLE_MAPS_IOS_KEY` (dort liegen nur die zwei Supabase-Werte). Das Navigationspaket bricht den iPhone-Build
+dann beim Vorbereiten ab (geprüft). Für den iPhone-Build reicht dieser eine Schlüssel (aus Schritt A), Firebase ist
+dafür nicht nötig. Danach baut Florian in seinem Terminal (Apple-Login, siehe `EINRICHTUNG.md` C).
+Angeboten, noch ohne Antwort: Test-Build mit Platzhalter-Schlüssel (Karte und Navigation ohne Funktion, ob die App
+damit ohne Absturz läuft, ist nur am Gerät prüfbar). Beim späteren Einbau des echten Schlüssels `version` erhöhen.
+
 1. **Entscheidungen prüfen** (`UMSETZUNG.md`, Abschnitt 7).
 2. **Registrierung abschalten** in Supabase (`EINRICHTUNG.md`, F).
 3. **A. Google-Schlüssel** (Pflicht für den Build): Projekt "Huta", vier APIs, drei Schlüssel.
