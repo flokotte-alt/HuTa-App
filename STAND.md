@@ -7,16 +7,26 @@ Zuletzt aktualisiert: 26.11.2026
 Das neue Konzept ist gebaut (Version 0.3.0). Bericht und alle Entscheidungen: **`UMSETZUNG.md`**.
 Befehle passend zum Rechner ausgeben.
 
-**26.11.: Florian wollte den iPhone-Build "erstmal so" in TestFlight. Nicht gebaut, nichts hochgeladen:** In Expo
-fehlt `GOOGLE_MAPS_IOS_KEY` (dort liegen nur die zwei Supabase-Werte). Das Navigationspaket bricht den iPhone-Build
-dann beim Vorbereiten ab (geprüft). Für den iPhone-Build reicht dieser eine Schlüssel (aus Schritt A), Firebase ist
-dafür nicht nötig. Danach baut Florian in seinem Terminal (Apple-Login, siehe `EINRICHTUNG.md` C).
-Angeboten, noch ohne Antwort: Test-Build mit Platzhalter-Schlüssel (Karte und Navigation ohne Funktion, ob die App
-damit ohne Absturz läuft, ist nur am Gerät prüfbar). Beim späteren Einbau des echten Schlüssels `version` erhöhen.
+**26.11.: iPhone-Test ohne Google-Schlüssel (von Florian gewünscht). Vorbereitet, aber noch nicht gebaut:**
+Der Start ohne Login ist abgebrochen, weil für die Erweiterung `ExpoWidgetsTarget` noch kein Apple-Profil besteht.
+Dabei hat Expo bei Apple die Kennung `de.dogworker.huta.ExpoWidgetsTarget` registriert (mit "App Groups"). Es ist
+kein Build entstanden und nichts hochgeladen. Florian startet in seinem Terminal (Apple-ID anmelden, alles mit Ja):
+
+```powershell
+npx.cmd eas-cli build --platform ios --profile ohne-google --auto-submit-with-profile preview --no-wait
+```
+
+- Der Befehl baut und lädt selbst zu TestFlight hoch. Im Gratis-Tarif kann die Warteschlange Stunden dauern.
+- Falls nur das Hochladen scheitert: `npx.cmd eas-cli submit --platform ios --profile preview --latest`
+- Florians Zustimmung gilt für genau diesen einen iPhone-Build samt TestFlight. Kein Android, keine App-Store-Prüfung.
+- Ohne Funktion: Karte, Navigation, Streckenwechsel, Verkehrsdaten. Am Gerät prüfen, ob die App startet.
+- Später mit echtem Schlüssel: `version` in `app.json` über 0.3.0 erhöhen (sonst bricht die Konfiguration ab),
+  dann Profil `preview`.
 
 1. **Entscheidungen prüfen** (`UMSETZUNG.md`, Abschnitt 7).
 2. **Registrierung abschalten** in Supabase (`EINRICHTUNG.md`, F).
-3. **A. Google-Schlüssel** (Pflicht für den Build): Projekt "Huta", vier APIs, drei Schlüssel.
+3. **A. Google-Schlüssel** (Pflicht für Karte, Navigation und den Android-Build): Projekt "Huta", vier APIs,
+   drei Schlüssel.
 4. **B. Firebase** (vor dem Android-Build, sonst kein Push auf Android).
 5. Florian schreibt "A und B fertig" und erlaubt den Build. Claude prüft mit `env:list` und startet den Android-Build.
 6. **C. iPhone-Build** mit Florians Apple-Login, danach Upload zu TestFlight.
@@ -55,6 +65,8 @@ und Web, 94 Datenbank-Prüfungen lokal, Klick-Test in der Web-Vorschau gegen ein
   Sie **passen seit Migration 0007 nicht mehr zur Datenbank** und können keine Updates empfangen.
 - Prüf-Builds 0.2.0 vom 25.11. waren für iOS und Android erfolgreich. 0.3.0 wurde noch nie gebaut.
   Neu dabei: `expo-video`, `expo-media-library` (Version deshalb erhöht).
+- Seit 26.11.: Build-Profil `ohne-google` (Platzhalter nur dort, `src/lib/google.ts` schaltet Karte und Navigation
+  ab). Geprüft ohne Gerät: 16 Prüfungen zu Konfiguration und Ausweichanzeige, Typprüfung, iOS-Bundle.
 - `expo-doctor` meldet seit dem 26.11. neuere Patch-Versionen einiger Expo-Pakete. Bewusst nicht aktualisiert.
 
 ## Aufgaben für Claude

@@ -41,14 +41,12 @@ npx eas-cli env:set --name GOOGLE_SERVICES_JSON --type file --value "$HOME/Downl
 ## Vorab: iPhone-Test ohne Google
 
 Für einen ersten Blick aufs iPhone geht es auch ohne A und B. Karte, Navigation, Streckenwechsel und Verkehrsdaten
-fehlen dann, die App zeigt Skizzen und den Knopf zur Karten-App. Statt der Befehle unter C:
+fehlen dann, die App zeigt Skizzen und den Knopf zur Karten-App. Statt der Befehle unter C reicht dieser eine.
+Er baut und lädt danach selbst zu TestFlight hoch. Beim Apple-Login mit deiner Apple-ID anmelden (mit **Ja**
+antworten, Passwort und Code tippst du selbst ein), alle weiteren Fragen mit **Ja**.
 
 ```powershell
-npx.cmd eas-cli build --platform ios --profile ohne-google
-```
-
-```powershell
-npx.cmd eas-cli submit --platform ios --profile preview --latest
+npx.cmd eas-cli build --platform ios --profile ohne-google --auto-submit-with-profile preview --no-wait
 ```
 
 Sobald ein echter Schlüssel bei Expo liegt, muss die Versionsnummer höher als 0.3.0 sein (Claude erhöht sie), dann
