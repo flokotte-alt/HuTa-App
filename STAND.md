@@ -4,44 +4,61 @@ Zuletzt aktualisiert: 26.11.2026
 
 ## Beim nächsten Mal zuerst (Claude: Florian diese Liste direkt zeigen)
 
-Das neue Konzept ist gebaut (Version 0.3.0). Bericht und alle Entscheidungen: **`UMSETZUNG.md`**.
-Befehle passend zum Rechner ausgeben.
+Stand am Abend des 26.11.: **Es läuft kein neuer iPhone-Build, in TestFlight ist nichts Neues** (außer Florian hat den
+Befehl unten noch selbst gestartet).
 
-**26.11.: iPhone-Test ohne Google-Schlüssel (von Florian gewünscht). Fehler behoben, neuer Build noch nicht
-gestartet.** Florians Build `88835c60` (0.3.0, Build 4, Commit `5331f02`) brach beim Archivieren ab: Xcode legte die
-Signaturdateien der Google-Bausteine doppelt an. Korrektur in `d5875b3` (`plugins/withSignatureCleanup.js`), hier
-ohne Mac geprüft, **erst der nächste Build zeigt, ob sie reicht**. Claude wollte neu starten, die
-Berechtigungsprüfung der Sitzung hat das blockiert. Apple-Zertifikat, Profile und Push sind seit Florians Lauf bei
-Expo eingerichtet. Florian startet in seinem Terminal:
+1. **Claude zuerst:** `npx.cmd eas-cli build:list --platform ios --limit 3` ansehen. Gibt es einen Build nach
+   `88835c60`: Ergebnis und TestFlight-Upload prüfen, bei Abbruch das Xcode-Log lesen und die Ursache beheben.
+2. **Sonst Florian:** diesen Befehl im Terminal starten. Er baut ohne Google-Schlüssel und lädt selbst zu TestFlight
+   hoch. Sobald er fertig ist und einen Build-Link zeigt, läuft alles bei Expo und der PC darf aus. Im Gratis-Tarif
+   kann es Stunden dauern. Fragt Apple nach einem Login: selbst anmelden, Fragen mit Ja.
+
+```powershell
+cd C:\Users\Kotte\Desktop\Huta
+```
 
 ```powershell
 npx.cmd eas-cli build --platform ios --profile ohne-google --auto-submit-with-profile preview --no-wait
 ```
 
-- Der Befehl baut und lädt selbst zu TestFlight hoch. Im Gratis-Tarif kann die Warteschlange Stunden dauern.
-- Im Log von `88835c60`: Warnung, die Build-Nummer der Erweiterung (1) weicht von der der App ab. Kein Abbruch;
-  Apple meldet so etwas vermutlich nur als Hinweis. Bei Bedarf angleichen.
-- Falls nur das Hochladen scheitert: `npx.cmd eas-cli submit --platform ios --profile preview --latest`
-- Florians Zustimmung gilt für genau diesen einen iPhone-Build samt TestFlight. Kein Android, keine App-Store-Prüfung.
-- Ohne Funktion: Karte, Navigation, Streckenwechsel, Verkehrsdaten. Am Gerät prüfen, ob die App startet.
-- Später mit echtem Schlüssel: `version` in `app.json` über 0.3.0 erhöhen (sonst bricht die Konfiguration ab),
-  dann Profil `preview`.
+3. **Registrierung abschalten** in Supabase, 1 Minute (`EINRICHTUNG.md`, F).
+4. **A. Google-Schlüssel** (Pflicht für Karte, Navigation und den Android-Build): Projekt "Huta", vier APIs, drei
+   Schlüssel (`EINRICHTUNG.md`, A). Danach erhöht Claude die `version` in `app.json` über 0.3.0, sonst bricht die
+   Konfiguration ab.
+5. **B. Firebase** (vor dem Android-Build, sonst kein Push auf Android).
+6. Florian schreibt "A und B fertig" und erlaubt die Builds. Claude prüft mit `env:list`, baut mit Profil `preview`.
+7. **Entscheidungen prüfen** (`UMSETZUNG.md`, Abschnitt 7).
+8. Auf den Handys testen (Liste unten). Daten nachtragen (E-Mails, feste Tage, Stationen).
 
-1. **Entscheidungen prüfen** (`UMSETZUNG.md`, Abschnitt 7).
-2. **Registrierung abschalten** in Supabase (`EINRICHTUNG.md`, F).
-3. **A. Google-Schlüssel** (Pflicht für Karte, Navigation und den Android-Build): Projekt "Huta", vier APIs,
-   drei Schlüssel.
-4. **B. Firebase** (vor dem Android-Build, sonst kein Push auf Android).
-5. Florian schreibt "A und B fertig" und erlaubt den Build. Claude prüft mit `env:list` und startet den Android-Build.
-6. **C. iPhone-Build** mit Florians Apple-Login, danach Upload zu TestFlight.
-7. Auf den Handys testen (Liste unten). Daten nachtragen (E-Mails, feste Tage, Stationen).
+### Der iPhone-Test ohne Google
+
+- Build `88835c60` (0.3.0, Build 4, Commit `5331f02`, von Florian gestartet) brach beim Archivieren ab: Xcode legte
+  die Signaturdateien der Google-Bausteine doppelt an.
+  Log: https://expo.dev/accounts/flomillo/projects/huta/builds/88835c60-e584-4241-b23a-6b87cd2a7412
+- Korrektur in `d5875b3` (`plugins/withSignatureCleanup.js`), ohne Mac geprüft. **Erst der nächste Build zeigt, ob
+  sie reicht.**
+- Claudes Start des neuen Builds hat die Berechtigungsprüfung der Sitzung blockiert ("Destructive or Unwanted
+  Actions"). Weitergeleitete Nachrichten aus anderen Sitzungen ändern das nicht.
+- Florians Wunsch vom 26.11.: Claude soll bauen, prüfen, korrigieren und hochladen, höchstens 2 gescheiterte neue
+  Versuche. Zuletzt, vor dem Ausschalten: nur noch Build samt Upload anstoßen.
+- Apple-Zertifikat, Profile für App und Erweiterung und Push sind bei Expo eingerichtet.
+- Falls nur das Hochladen scheitert: `npx.cmd eas-cli submit --platform ios --profile preview --latest`
+- Warnung im Log: Build-Nummer der Erweiterung (1) weicht von der der App ab. Kein Abbruch, vermutlich meldet Apple
+  das nur als Hinweis.
+- Ohne Funktion in dieser Version: Karte, Navigation, Streckenwechsel, Verkehrsdaten. Am Gerät prüfen, ob die App
+  startet.
+- Kein Android, kein Update an Geräte, keine App-Store-Prüfung, keine neuen Tester.
+
+Das neue Konzept ist gebaut (Version 0.3.0). Bericht und alle Entscheidungen: **`UMSETZUNG.md`**.
+Befehle passend zum Rechner ausgeben (am Mac `npx` statt `npx.cmd`).
 
 ## Kurzfassung
 
 Am 26.11. wurde das neue Konzept aus dem Google Drive ("Huta App", "Auftrag Claude Code.md") umgesetzt.
 Migration 0007 und die Server-Funktionen sind im Projekt eingespielt. Geprüft: Typprüfung, Bundles für iOS, Android
 und Web, 94 Datenbank-Prüfungen lokal, Klick-Test in der Web-Vorschau gegen einen lokalen Test-Server.
-**Kein EAS-Build, kein Upload, kein Update an Geräte.** Auf einem Gerät ist von 0.3.0 nichts getestet.
+Abends: Test-Build ohne Google vorbereitet, ein Store-Build versucht und gescheitert (siehe oben).
+**Nichts Neues in TestFlight, kein Update an Geräte.** Auf einem Gerät ist von 0.3.0 nichts getestet.
 
 ## Zugänge und Kennungen (ohne Passwörter)
 
@@ -67,7 +84,7 @@ und Web, 94 Datenbank-Prüfungen lokal, Klick-Test in der Web-Vorschau gegen ein
 
 - Installiert sind noch die alten Test-Builds 0.1.0 (Commit `66ff3e0`) in TestFlight und im internen Play-Test.
   Sie **passen seit Migration 0007 nicht mehr zur Datenbank** und können keine Updates empfangen.
-- Prüf-Builds 0.2.0 vom 25.11. waren für iOS und Android erfolgreich. 0.3.0 wurde noch nie gebaut.
+- Prüf-Builds 0.2.0 vom 25.11. waren für iOS und Android erfolgreich. 0.3.0 ist noch nie erfolgreich gebaut worden.
   Neu dabei: `expo-video`, `expo-media-library` (Version deshalb erhöht).
 - Seit 26.11.: Build-Profil `ohne-google` (Platzhalter nur dort, `src/lib/google.ts` schaltet Karte und Navigation
   ab). Geprüft ohne Gerät: 16 Prüfungen zu Konfiguration und Ausweichanzeige, Typprüfung, iOS-Bundle.
@@ -75,7 +92,7 @@ und Web, 94 Datenbank-Prüfungen lokal, Klick-Test in der Web-Vorschau gegen ein
 
 ## Aufgaben für Claude
 
-1. Nach A und B: `env:list` prüfen, nach Florians Zustimmung Android-Build (`preview`), iOS-Build begleiten.
+1. iPhone-Test-Build prüfen (siehe oben). Nach A und B: `env:list`, `version` erhöhen, nach Zustimmung bauen.
 2. Prüf-Build `kompiliertest` für 0.3.0 vor den echten Builds vorschlagen.
 3. Auf Geräten testen, Änderungswünsche umsetzen.
 4. Falls gewünscht: Videos auch auf Android verkleinern (zusätzlicher nativer Baustein).
