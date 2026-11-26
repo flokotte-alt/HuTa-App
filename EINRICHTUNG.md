@@ -38,7 +38,23 @@ sieht am Mac so aus:
 npx eas-cli env:set --name GOOGLE_SERVICES_JSON --type file --value "$HOME/Downloads/google-services.json" --visibility sensitive --environment preview --environment production
 ```
 
-## A. Google Cloud (Pflicht vor dem nächsten Build)
+## Vorab: iPhone-Test ohne Google
+
+Für einen ersten Blick aufs iPhone geht es auch ohne A und B. Karte, Navigation, Streckenwechsel und Verkehrsdaten
+fehlen dann, die App zeigt Skizzen und den Knopf zur Karten-App. Statt der Befehle unter C:
+
+```powershell
+npx.cmd eas-cli build --platform ios --profile ohne-google
+```
+
+```powershell
+npx.cmd eas-cli submit --platform ios --profile preview --latest
+```
+
+Sobald ein echter Schlüssel bei Expo liegt, muss die Versionsnummer höher als 0.3.0 sein (Claude erhöht sie), dann
+neu bauen mit Profil `preview`.
+
+## A. Google Cloud (Pflicht für Karte und Navigation)
 
 1. [console.cloud.google.com](https://console.cloud.google.com), neues Projekt **Huta** (nicht das von anderen Apps).
 2. Abrechnung verknüpfen.

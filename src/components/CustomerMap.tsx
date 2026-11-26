@@ -2,10 +2,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { MapColorScheme, MapView, type MapViewController } from '@googlemaps/react-native-navigation-sdk';
+import { RouteSketch } from './RouteSketch';
+import { hasGoogleMaps } from '@/lib/google';
 import { useTheme } from '@/lib/theme';
 import type { CustomerMapProps } from './customerMapTypes';
 
-export function CustomerMap({ station, vehicle }: CustomerMapProps) {
+export function CustomerMap(props: CustomerMapProps) {
+  if (hasGoogleMaps) return <GoogleCustomerMap {...props} />;
+  // Test-Version ohne Google-Schluessel: Skizze statt Karte
+  return (
+    <View style={{ height: 180, borderRadius: 10, overflow: 'hidden' }}>
+      <RouteSketch stops={[{ ...props.station, current: true }]} vehicle={props.vehicle} />
+    </View>
+  );
+}
+
+function GoogleCustomerMap({ station, vehicle }: CustomerMapProps) {
   const map = useRef<MapViewController | null>(null);
   const marker = useRef<string | null>(null);
   const [ready, setReady] = useState(false);

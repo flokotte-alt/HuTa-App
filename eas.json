@@ -12,6 +12,12 @@
       "channel": "production",
       "environment": "production"
     },
+    "ohne-google": {
+      "extends": "preview",
+      "env": {
+        "HUTA_OHNE_GOOGLE": "1"
+      }
+    },
     "kompiliertest": {
       "distribution": "internal",
       "environment": "preview",

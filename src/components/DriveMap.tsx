@@ -15,6 +15,7 @@ import {
 } from '@googlemaps/react-native-navigation-sdk';
 import { RouteSketch } from './RouteSketch';
 import { Btn, Spinner, T } from './ui';
+import { hasGoogleMaps } from '@/lib/google';
 import { openMaps } from '@/lib/maps';
 import { useTheme } from '@/lib/theme';
 import type { DriveMapProps } from './driveMapTypes';
@@ -29,10 +30,28 @@ const SESSION_ERRORS: Partial<Record<NavigationSessionStatus, string>> = {
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function DriveMap(props: DriveMapProps) {
+  if (!hasGoogleMaps) return <WithoutGoogle {...props} />;
   return (
     <NavigationProvider termsAndConditionsDialogOptions={{ title: 'Nutzungsbedingungen', companyName: 'Dogworker Dresden' }}>
       <Guidance {...props} />
     </NavigationProvider>
+  );
+}
+
+// Test-Version ohne Google-Schluessel: Skizze und Knopf zur Karten-App
+function WithoutGoogle({ ref, target, stops, vehicle }: DriveMapProps) {
+  const { colors } = useTheme();
+  useImperativeHandle(ref, () => ({ remainingSeconds: async () => null, applyRoute: async () => false }), []);
+  return (
+    <View style={{ flex: 1 }}>
+      <RouteSketch stops={stops} vehicle={vehicle} />
+      <View style={{ padding: 12, gap: 8, backgroundColor: colors.card }}>
+        <T small muted>
+          Test-Version ohne Google: hier noch keine Karte und keine Navigation.
+        </T>
+        {target && <Btn kind="secondary" title="In Karten-App öffnen" icon="navigate" onPress={() => openMaps(target)} />}
+      </View>
+    </View>
   );
 }
 

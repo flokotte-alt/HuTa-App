@@ -53,6 +53,9 @@ npx.cmd eas-cli build --platform ios --profile preview
 
 Prüf-Build ohne echte Schlüssel (nur ob alles zusammenbaut): `--profile kompiliertest`.
 
+iPhone-Test ohne Google-Schlüssel (TestFlight): `--profile ohne-google`. Karte und Navigation sind darin
+abgeschaltet. Ein echter Schlüssel braucht danach eine höhere Versionsnummer als 0.3.0.
+
 ## Datenbank und Server
 
 - Schema in `supabase/migrations`. `supabase/seed.sql` ist nur für eine leere Datenbank (erfundene Daten).
